@@ -61,26 +61,6 @@ class _SplashScreenState extends State<SplashScreen> {
           children: [
             // Logo
             Image.asset('assets/images/logo.png', width: 200, height: 200),
-            const SizedBox(height: 24),
-            // Nombre de la app
-            const Text(
-              'Donde Caiga',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF263238),
-              ),
-            ),
-            const SizedBox(height: 8),
-            // Tagline
-            const Text(
-              'Viaja. Conoce. Comparte.',
-              style: TextStyle(
-                fontSize: 16,
-                color: Color(0xFF78909C),
-                letterSpacing: 1.2,
-              ),
-            ),
             const SizedBox(height: 48),
             // Indicador de carga
             const CircularProgressIndicator(

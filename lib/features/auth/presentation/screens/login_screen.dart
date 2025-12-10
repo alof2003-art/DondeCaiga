@@ -7,6 +7,7 @@ import '../../../auth/data/repositories/user_repository.dart';
 import '../../../../core/utils/error_handler.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
+import '../widgets/blocked_account_dialog.dart';
 import 'register_screen.dart';
 import '../../../main/presentation/screens/main_screen.dart';
 
@@ -74,10 +75,19 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (!mounted) return;
 
-      final errorMessage = ErrorHandler.getErrorMessage(e);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
-      );
+      // Manejar cuenta bloqueada con diálogo especial
+      if (e is AccountBlockedException) {
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => BlockedAccountDialog(message: e.message),
+        );
+      } else {
+        final errorMessage = ErrorHandler.getErrorMessage(e);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -114,25 +124,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 16),
 
-              // Nombre de la app
-              const Center(
-                child: Text(
-                  'Donde Caiga',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF263238),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
               // Bienvenido
               const Center(
                 child: Text(
                   'Bienvenido',
-                  style: TextStyle(fontSize: 18, color: Color(0xFF78909C)),
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF4DB6AC),
+                  ),
                 ),
               ),
 

@@ -74,6 +74,21 @@ class _ReservaCalendarioScreenState extends State<ReservaCalendarioScreen> {
   }
 
   void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
+    // Verificar si la fecha está ocupada
+    if (_esFechaOcupada(selectedDay)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Esta fecha ya está reservada. Por favor selecciona otra fecha.',
+          ),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return; // No permitir selección
+    }
+
+    // Verificar si es seleccionable (fecha pasada)
     if (!_esFechaSeleccionable(selectedDay)) {
       return;
     }
@@ -133,6 +148,17 @@ class _ReservaCalendarioScreenState extends State<ReservaCalendarioScreen> {
       final user = supabase.auth.currentUser;
       if (user == null) throw Exception('Usuario no autenticado');
 
+      // PASO 1: Verificar si el usuario tiene reservas activas
+      final tieneReservasActivas = await _reservaRepository
+          .verificarReservasActivas(user.id);
+
+      if (tieneReservasActivas) {
+        throw Exception(
+          'Ya tienes una reserva activa. Completa tu reserva actual antes de crear una nueva.',
+        );
+      }
+
+      // PASO 2: Verificar disponibilidad de fechas
       final disponible = await _reservaRepository.verificarDisponibilidad(
         propiedadId: widget.propiedad.id,
         fechaInicio: _fechaInicio!,
@@ -140,9 +166,12 @@ class _ReservaCalendarioScreenState extends State<ReservaCalendarioScreen> {
       );
 
       if (!disponible) {
-        throw Exception('Las fechas seleccionadas ya no están disponibles');
+        throw Exception(
+          'Las fechas seleccionadas no están disponibles. Por favor selecciona otras fechas.',
+        );
       }
 
+      // PASO 3: Crear reserva
       await _reservaRepository.crearReserva(
         propiedadId: widget.propiedad.id,
         viajeroId: user.id,
@@ -166,7 +195,10 @@ class _ReservaCalendarioScreenState extends State<ReservaCalendarioScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: Colors.orange,
+        ),
       );
     } finally {
       if (mounted) {
@@ -283,6 +315,32 @@ class _ReservaCalendarioScreenState extends State<ReservaCalendarioScreen> {
                             return isSameDay(_fechaInicio, day);
                           },
                           onDaySelected: _onDaySelected,
+                          calendarBuilders: CalendarBuilders(
+                            // Builder para días deshabilitados (fechas ocupadas)
+                            disabledBuilder: (context, day, focusedDay) {
+                              // Solo aplicar estilo rojo si está ocupada
+                              // (no a fechas pasadas)
+                              if (_esFechaOcupada(day)) {
+                                return Container(
+                                  margin: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.shade400,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '${day.day}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+                              return null; // Usar estilo por defecto para fechas pasadas
+                            },
+                          ),
                           calendarStyle: const CalendarStyle(
                             selectedDecoration: BoxDecoration(
                               color: Color(0xFF4DB6AC),

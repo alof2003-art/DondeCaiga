@@ -54,10 +54,59 @@ class AuthService {
         );
       }
 
+      // Verificar si la cuenta está bloqueada
+      if (response.user != null) {
+        final userProfile = await _userRepository.getUserProfile(
+          response.user!.id,
+        );
+
+        if (userProfile != null && userProfile.estadoCuenta == 'bloqueado') {
+          // Obtener el motivo del bloqueo desde la auditoría
+          final blockReason = await _getBlockReason(response.user!.id);
+
+          // Cerrar sesión inmediatamente
+          await signOut();
+
+          // Lanzar excepción con el motivo del bloqueo
+          throw AccountBlockedException(blockReason);
+        }
+      }
+
       return response;
     } catch (e) {
       ErrorHandler.logError(e);
       rethrow;
+    }
+  }
+
+  /// Obtiene el motivo del bloqueo desde la auditoría
+  Future<String> _getBlockReason(String userId) async {
+    try {
+      // Usar función SQL que bypasa RLS
+      final response = await _supabase.rpc(
+        'get_block_reason',
+        params: {'user_id': userId},
+      );
+
+      if (response != null && response.isNotEmpty) {
+        final data = response.first;
+        final reason = data['reason'] as String?;
+        final dateStr = data['created_at'] as String?;
+
+        if (dateStr != null) {
+          final date = DateTime.parse(dateStr);
+          final formattedDate = '${date.day}/${date.month}/${date.year}';
+
+          return reason != null && reason.isNotEmpty
+              ? 'Tu cuenta fue bloqueada el $formattedDate.\n\nMotivo: $reason\n\nContacta al administrador para más información.'
+              : 'Tu cuenta fue bloqueada el $formattedDate.\n\nContacta al administrador para más información.';
+        }
+      }
+
+      return 'Tu cuenta ha sido bloqueada.\n\nContacta al administrador para más información.';
+    } catch (e) {
+      print('Error obteniendo motivo de bloqueo: $e');
+      return 'Tu cuenta ha sido bloqueada.\n\nContacta al administrador para más información.';
     }
   }
 

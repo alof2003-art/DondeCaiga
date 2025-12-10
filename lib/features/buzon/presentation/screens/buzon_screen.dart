@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../main.dart';
+import '../../../../core/widgets/user_name_widget.dart';
 
 class BuzonScreen extends StatelessWidget {
   const BuzonScreen({super.key});
@@ -10,6 +12,7 @@ class BuzonScreen extends StatelessWidget {
         title: const Text('Buzón'),
         backgroundColor: const Color(0xFF4DB6AC),
         foregroundColor: Colors.white,
+        actions: [UserNameWidget(supabase: supabase)],
       ),
       body: Center(
         child: Column(

@@ -5,6 +5,8 @@ import 'package:donde_caigav2/services/storage_service.dart';
 import 'package:donde_caigav2/features/auth/data/repositories/user_repository.dart';
 import 'package:donde_caigav2/features/auth/presentation/screens/login_screen.dart';
 import 'package:donde_caigav2/features/anfitrion/presentation/screens/admin_solicitudes_screen.dart';
+import 'package:donde_caigav2/features/admin/presentation/screens/admin_dashboard_screen.dart';
+import 'editar_perfil_screen.dart';
 
 class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key});
@@ -81,6 +83,27 @@ class _PerfilScreenState extends State<PerfilScreen> {
     }
   }
 
+  Future<void> _navegarAEditarPerfil() async {
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) return;
+
+    final resultado = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditarPerfilScreen(
+          userId: userId,
+          nombreActual: _userName ?? '',
+          fotoActual: _fotoPerfilUrl,
+        ),
+      ),
+    );
+
+    // Si hubo cambios, recargar el perfil
+    if (resultado == true) {
+      _loadUserInfo();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -88,6 +111,13 @@ class _PerfilScreenState extends State<PerfilScreen> {
         title: const Text('Mi Perfil'),
         backgroundColor: const Color(0xFF4DB6AC),
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: _navegarAEditarPerfil,
+            tooltip: 'Editar perfil',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -158,6 +188,30 @@ class _PerfilScreenState extends State<PerfilScreen> {
                 ),
               ),
               const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AdminDashboardScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.dashboard),
+                  label: const Text('Panel de Administración'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4DB6AC),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(

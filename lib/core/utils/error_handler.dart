@@ -2,10 +2,22 @@ import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../constants/app_constants.dart';
 
+/// Excepción personalizada para cuentas bloqueadas
+class AccountBlockedException implements Exception {
+  final String message;
+
+  const AccountBlockedException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 class ErrorHandler {
   /// Obtiene un mensaje de error amigable para el usuario
   static String getErrorMessage(dynamic error) {
-    if (error is AuthException) {
+    if (error is AccountBlockedException) {
+      return error.message;
+    } else if (error is AuthException) {
       return _handleAuthError(error);
     } else if (error is StorageException) {
       return _handleStorageError(error);

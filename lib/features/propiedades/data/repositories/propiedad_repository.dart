@@ -48,24 +48,10 @@ class PropiedadRepository {
 
   /// Obtener todas las propiedades activas (para Explorar)
   Future<List<Propiedad>> obtenerPropiedadesActivas() async {
-    final response = await _supabase
-        .from('propiedades')
-        .select('''
-          *,
-          users_profiles!propiedades_anfitrion_id_fkey(nombre, foto_perfil_url)
-        ''')
-        .eq('estado', 'activo')
-        .order('created_at', ascending: false);
+    final response = await _supabase.rpc('get_propiedades_con_calificaciones');
 
     return (response as List).map((json) {
       final propiedad = Map<String, dynamic>.from(json);
-      final anfitrion = json['users_profiles'];
-
-      if (anfitrion != null) {
-        propiedad['nombre_anfitrion'] = anfitrion['nombre'];
-        propiedad['foto_anfitrion'] = anfitrion['foto_perfil_url'];
-      }
-
       return Propiedad.fromJson(propiedad);
     }).toList();
   }

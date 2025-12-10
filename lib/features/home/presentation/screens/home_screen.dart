@@ -4,6 +4,7 @@ import '../../../../services/auth_service.dart';
 import '../../../../services/storage_service.dart';
 import '../../../auth/data/repositories/user_repository.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
+import '../../../../core/widgets/user_name_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -66,6 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: const Color(0xFF4DB6AC),
         foregroundColor: Colors.white,
         actions: [
+          UserNameWidget(supabase: supabase),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _handleLogout,

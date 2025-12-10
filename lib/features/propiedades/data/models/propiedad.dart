@@ -21,6 +21,12 @@ class Propiedad {
   final String? nombreAnfitrion;
   final String? fotoAnfitrion;
 
+  // Datos de calificaciones
+  final double?
+  calificacionPromedio; // Promedio de reseñas de esta propiedad (0-5)
+  final int? numeroResenas; // Cantidad de reseñas de esta propiedad
+  final double? calificacionAnfitrion; // Promedio del anfitrión (0-5)
+
   Propiedad({
     required this.id,
     required this.anfitrionId,
@@ -41,6 +47,9 @@ class Propiedad {
     required this.updatedAt,
     this.nombreAnfitrion,
     this.fotoAnfitrion,
+    this.calificacionPromedio,
+    this.numeroResenas,
+    this.calificacionAnfitrion,
   });
 
   factory Propiedad.fromJson(Map<String, dynamic> json) {
@@ -68,6 +77,13 @@ class Propiedad {
       updatedAt: DateTime.parse(json['updated_at'] as String),
       nombreAnfitrion: json['nombre_anfitrion'] as String?,
       fotoAnfitrion: json['foto_anfitrion'] as String?,
+      calificacionPromedio: json['calificacion_promedio'] != null
+          ? (json['calificacion_promedio'] as num).toDouble()
+          : null,
+      numeroResenas: json['numero_resenas'] as int?,
+      calificacionAnfitrion: json['calificacion_anfitrion'] != null
+          ? (json['calificacion_anfitrion'] as num).toDouble()
+          : null,
     );
   }
 

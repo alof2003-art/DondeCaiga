@@ -55,22 +55,56 @@ class ReservaRepository {
     return fechasOcupadas;
   }
 
+  /// Verificar si un viajero tiene reservas activas futuras
+  Future<bool> verificarReservasActivas(String viajeroId) async {
+    final hoy = DateTime.now();
+    final hoyStr = DateTime(hoy.year, hoy.month, hoy.day).toIso8601String();
+
+    final response = await _supabase
+        .from('reservas')
+        .select('id')
+        .eq('viajero_id', viajeroId)
+        .inFilter('estado', ['pendiente', 'confirmada'])
+        .gte('fecha_inicio', hoyStr);
+
+    return (response as List).isNotEmpty;
+  }
+
   /// Verificar si hay conflicto de fechas
   Future<bool> verificarDisponibilidad({
     required String propiedadId,
     required DateTime fechaInicio,
     required DateTime fechaFin,
   }) async {
+    // Normalizar fechas (sin hora)
+    final inicio = DateTime(
+      fechaInicio.year,
+      fechaInicio.month,
+      fechaInicio.day,
+    );
+    final fin = DateTime(fechaFin.year, fechaFin.month, fechaFin.day);
+
     final response = await _supabase
         .from('reservas')
-        .select('id')
+        .select('id, fecha_inicio, fecha_fin')
         .eq('propiedad_id', propiedadId)
-        .inFilter('estado', ['pendiente', 'confirmada'])
-        .or(
-          'fecha_inicio.lte.${fechaFin.toIso8601String()},fecha_fin.gte.${fechaInicio.toIso8601String()}',
-        );
+        .inFilter('estado', ['pendiente', 'confirmada']);
 
-    return (response as List).isEmpty;
+    // Verificar solapamiento manualmente para mayor precisión
+    for (final reserva in response as List) {
+      final reservaInicio = DateTime.parse(reserva['fecha_inicio'] as String);
+      final reservaFin = DateTime.parse(reserva['fecha_fin'] as String);
+
+      // Hay solapamiento si:
+      // - La nueva reserva empieza antes o el mismo día que termina la existente Y
+      // - La nueva reserva termina después o el mismo día que empieza la existente
+      if (inicio.isBefore(reservaFin.add(const Duration(days: 1))) &&
+          fin.isAfter(reservaInicio.subtract(const Duration(days: 1)))) {
+        return false; // No disponible (hay conflicto)
+      }
+    }
+
+    return true; // Disponible (sin conflictos)
   }
 
   /// Obtener reservas de un viajero
@@ -87,7 +121,7 @@ class ReservaRepository {
           )
         ''')
         .eq('viajero_id', viajeroId)
-        .eq('estado', 'confirmada')
+        // Removido filtro .eq('estado', 'confirmada') para mostrar todas las reservas
         .order('created_at', ascending: false);
 
     return (response as List).map((json) {
@@ -135,7 +169,7 @@ class ReservaRepository {
           users_profiles!reservas_viajero_id_fkey(nombre, foto_perfil_url)
         ''')
         .inFilter('propiedad_id', propiedadIds)
-        .eq('estado', 'confirmada')
+        // Removido filtro .eq('estado', 'confirmada') para mostrar todas las reservas
         .order('created_at', ascending: false);
 
     return (response as List).map((json) {
