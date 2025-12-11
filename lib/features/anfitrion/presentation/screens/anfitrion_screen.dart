@@ -7,7 +7,7 @@ import 'package:donde_caigav2/features/propiedades/data/repositories/propiedad_r
 import 'package:donde_caigav2/features/propiedades/data/models/propiedad.dart';
 import 'package:donde_caigav2/features/reservas/presentation/screens/mis_reservas_anfitrion_screen.dart';
 import 'package:donde_caigav2/features/anfitrion/presentation/screens/solicitud_anfitrion_screen.dart';
-import 'package:donde_caigav2/core/widgets/user_name_widget.dart';
+import 'package:donde_caigav2/core/widgets/custom_app_bar_header.dart';
 
 class AnfitrionScreen extends StatefulWidget {
   const AnfitrionScreen({super.key});
@@ -52,10 +52,9 @@ class _AnfitrionScreenState extends State<AnfitrionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Anfitrión'),
+        title: CustomAppBarHeader(supabase: supabase, screenTitle: 'Anfitrión'),
         backgroundColor: const Color(0xFF4DB6AC),
         foregroundColor: Colors.white,
-        actions: [UserNameWidget(supabase: supabase)],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../auth/data/models/user_profile.dart';
 
-enum UserActionType { degradeRole, blockAccount, unblockAccount }
+enum UserActionType { degradeRole, blockAccount, unblockAccount, deleteAccount }
 
 class UserActionDialog extends StatefulWidget {
   final UserProfile user;
@@ -23,12 +23,14 @@ class UserActionDialog extends StatefulWidget {
 
 class _UserActionDialogState extends State<UserActionDialog> {
   final TextEditingController _reasonController = TextEditingController();
+  final TextEditingController _confirmationController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
 
   @override
   void dispose() {
     _reasonController.dispose();
+    _confirmationController.dispose();
     super.dispose();
   }
 
@@ -40,6 +42,8 @@ class _UserActionDialogState extends State<UserActionDialog> {
         return 'Bloquear Cuenta';
       case UserActionType.unblockAccount:
         return 'Desbloquear Cuenta';
+      case UserActionType.deleteAccount:
+        return 'Eliminar Cuenta';
     }
   }
 
@@ -51,12 +55,19 @@ class _UserActionDialogState extends State<UserActionDialog> {
         return '¿Estás seguro de bloquear la cuenta de ${widget.user.nombre}? El usuario no podrá acceder a la aplicación.';
       case UserActionType.unblockAccount:
         return '¿Estás seguro de desbloquear la cuenta de ${widget.user.nombre}? El usuario podrá acceder nuevamente.';
+      case UserActionType.deleteAccount:
+        return '⚠️ ADVERTENCIA: Esta acción es IRREVERSIBLE.\n\n¿Estás seguro de eliminar PERMANENTEMENTE la cuenta de ${widget.user.nombre}?\n\nSe eliminarán TODOS sus datos: propiedades, reservas, reseñas, mensajes, fotos y perfil.';
     }
   }
 
   bool get _requiresReason {
     return widget.actionType == UserActionType.degradeRole ||
-        widget.actionType == UserActionType.blockAccount;
+        widget.actionType == UserActionType.blockAccount ||
+        widget.actionType == UserActionType.deleteAccount;
+  }
+
+  bool get _requiresConfirmation {
+    return widget.actionType == UserActionType.deleteAccount;
   }
 
   Color get _actionColor {
@@ -67,6 +78,8 @@ class _UserActionDialogState extends State<UserActionDialog> {
         return Colors.red;
       case UserActionType.unblockAccount:
         return Colors.green;
+      case UserActionType.deleteAccount:
+        return Colors.red.shade800;
     }
   }
 
@@ -78,6 +91,8 @@ class _UserActionDialogState extends State<UserActionDialog> {
         return Icons.block;
       case UserActionType.unblockAccount:
         return Icons.check_circle;
+      case UserActionType.deleteAccount:
+        return Icons.delete_forever;
     }
   }
 
@@ -98,6 +113,16 @@ class _UserActionDialogState extends State<UserActionDialog> {
     if (_requiresReason && _reasonController.text.trim().length < 10) {
       setState(() {
         _errorMessage = 'El motivo debe tener al menos 10 caracteres';
+      });
+      return;
+    }
+
+    // Validar confirmación "ACEPTAR" para eliminación
+    if (_requiresConfirmation &&
+        _confirmationController.text.trim() != 'ACEPTAR') {
+      setState(() {
+        _errorMessage =
+            'Debes escribir exactamente "ACEPTAR" para confirmar la eliminación';
       });
       return;
     }
@@ -230,6 +255,41 @@ class _UserActionDialogState extends State<UserActionDialog> {
               const SizedBox(height: 16),
             ],
 
+            // Campo de confirmación "ACEPTAR" para eliminación
+            if (_requiresConfirmation) ...[
+              Text(
+                'Confirmación *',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red.shade700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _confirmationController,
+                enabled: !_isLoading,
+                decoration: InputDecoration(
+                  hintText: 'Escribe exactamente: ACEPTAR',
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.red.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.red.shade500),
+                  ),
+                  helperText: 'Debes escribir "ACEPTAR" para confirmar',
+                  helperStyle: TextStyle(color: Colors.red.shade600),
+                ),
+                onChanged: (value) {
+                  if (_errorMessage != null) {
+                    setState(() {
+                      _errorMessage = null;
+                    });
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+
             // Advertencia adicional para acciones críticas
             if (widget.actionType == UserActionType.blockAccount) ...[
               Container(
@@ -276,6 +336,57 @@ class _UserActionDialogState extends State<UserActionDialog> {
                           color: Colors.orange.shade700,
                           fontSize: 12,
                         ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            if (widget.actionType == UserActionType.deleteAccount) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  border: Border.all(color: Colors.red.shade300, width: 2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.warning,
+                          color: Colors.red.shade700,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'ELIMINACIÓN PERMANENTE',
+                            style: TextStyle(
+                              color: Colors.red.shade700,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Esta acción eliminará PERMANENTEMENTE:\n'
+                      '• Todas las propiedades y alojamientos\n'
+                      '• Todas las reservas (como viajero y anfitrión)\n'
+                      '• Todas las reseñas escritas y recibidas\n'
+                      '• Todos los mensajes y conversaciones\n'
+                      '• Todas las fotos de perfil y propiedades\n'
+                      '• El perfil completo del usuario\n\n'
+                      'NO SE PUEDE DESHACER.',
+                      style: TextStyle(
+                        color: Colors.red.shade700,
+                        fontSize: 12,
                       ),
                     ),
                   ],

@@ -75,7 +75,7 @@ class AuditLog {
 
   String get actionDescription {
     if (!wasSuccessful) {
-      return 'Falló: ${actionDisplayName}';
+      return 'Falló: $actionDisplayName';
     }
 
     switch (actionType) {

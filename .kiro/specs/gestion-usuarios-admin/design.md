@@ -58,6 +58,7 @@ class AdminRepository {
   Future<AdminActionResult> degradarAnfitrionAViajero(String userId, String adminId, String reason);
   Future<AdminActionResult> bloquearCuentaUsuario(String userId, String reason, String adminId);
   Future<AdminActionResult> desbloquearCuentaUsuario(String userId, String adminId);
+  Future<AdminActionResult> eliminarCuentaUsuario(String userId, String reason, String adminId);
   Future<bool> validarPermisosAdmin(String adminId, String targetUserId);
 }
 ```
@@ -101,7 +102,7 @@ abstract class AuditRepository {
 class AdminAction {
   final String adminId;
   final String targetUserId;
-  final String actionType; // 'degrade_role', 'block_account', 'unblock_account'
+  final String actionType; // 'degrade_role', 'block_account', 'unblock_account', 'delete_account'
   final Map<String, dynamic> actionData;
   final String? reason;
   final DateTime timestamp;
@@ -284,7 +285,23 @@ Después de revisar todas las propiedades identificadas en el prework, he identi
 
 **Property 27: Notificación de cambios administrativos**
 *Para cualquier* cambio administrativo realizado, el sistema debe notificar al usuario afectado por email sobre los cambios en su cuenta
-**Validates: Requirements 10.7**
+**Validates: Requirements 11.7**
+
+**Property 28: Eliminación completa de datos de usuario**
+*Para cualquier* usuario eliminado, el sistema debe remover completamente todos sus datos: perfil, propiedades, reservas, reseñas, mensajes y solicitudes
+**Validates: Requirements 6.7, 6.8, 6.9, 6.10, 6.11, 6.12**
+
+**Property 29: Eliminación de archivos de storage**
+*Para cualquier* usuario eliminado, el sistema debe eliminar automáticamente todas sus fotos de perfil y fotos de propiedades del storage
+**Validates: Requirements 6.10**
+
+**Property 30: Validación de confirmación "ACEPTAR"**
+*Para cualquier* intento de eliminación de cuenta, el sistema debe requerir que se escriba exactamente "ACEPTAR" para habilitar la confirmación
+**Validates: Requirements 6.4, 6.5**
+
+**Property 31: Registro de auditoría antes de eliminación**
+*Para cualquier* eliminación de cuenta, el sistema debe registrar la acción en auditoría antes de proceder con la eliminación de datos
+**Validates: Requirements 6.13**
 
 ## Error Handling
 

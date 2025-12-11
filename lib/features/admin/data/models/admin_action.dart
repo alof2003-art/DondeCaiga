@@ -10,6 +10,7 @@ class AdminAction {
   static const String degradeRoleType = 'degrade_role';
   static const String blockAccountType = 'block_account';
   static const String unblockAccountType = 'unblock_account';
+  static const String deleteAccountType = 'delete_account';
 
   AdminAction({
     required this.adminId,
@@ -89,10 +90,26 @@ class AdminAction {
     );
   }
 
+  factory AdminAction.deleteAccount({
+    required String adminId,
+    required String targetUserId,
+    required String reason,
+  }) {
+    return AdminAction(
+      adminId: adminId,
+      targetUserId: targetUserId,
+      actionType: deleteAccountType,
+      actionData: {'action': 'permanent_deletion'},
+      reason: reason,
+      timestamp: DateTime.now(),
+    );
+  }
+
   // Getters para facilitar el acceso a datos específicos
   bool get isDegradeRole => actionType == degradeRoleType;
   bool get isBlockAccount => actionType == blockAccountType;
   bool get isUnblockAccount => actionType == unblockAccountType;
+  bool get isDeleteAccount => actionType == deleteAccountType;
 
   String get actionDisplayName {
     switch (actionType) {
@@ -102,6 +119,8 @@ class AdminAction {
         return 'Bloquear Cuenta';
       case unblockAccountType:
         return 'Desbloquear Cuenta';
+      case deleteAccountType:
+        return 'Eliminar Cuenta';
       default:
         return 'Acción Desconocida';
     }

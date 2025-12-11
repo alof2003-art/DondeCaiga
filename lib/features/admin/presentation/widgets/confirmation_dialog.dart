@@ -113,6 +113,8 @@ class _ConfirmationDialogState extends State<ConfirmationDialog> {
   }
 
   // Métodos estáticos para crear diálogos comunes
+  // TODO: Métodos de utilidad para futuros usos
+  /*
   static Future<bool?> showSuccess({
     required BuildContext context,
     required String title,
@@ -250,4 +252,5 @@ class _ConfirmationDialogState extends State<ConfirmationDialog> {
       ),
     );
   }
+  */
 }

@@ -81,7 +81,27 @@ Este documento define los requisitos para el sistema de gestión de usuarios por
 5. WHEN se desbloquea una cuenta, THEN el Sistema SHALL registrar la acción en el historial con fecha y administrador responsable
 6. WHEN se desbloquea una cuenta, THEN el Sistema SHALL actualizar inmediatamente la visualización del estado en la lista
 
-### Requisito 6: Restricciones de Seguridad
+### Requisito 6: Eliminación Permanente de Cuenta de Usuario
+
+**User Story:** Como administrador, quiero eliminar permanentemente la cuenta de un usuario cuando sea necesario por violaciones graves, para remover completamente su acceso y datos de la plataforma.
+
+#### Criterios de Aceptación
+
+1. WHEN el administrador selecciona cualquier usuario (viajero o anfitrión), THEN el Sistema SHALL mostrar la opción "Eliminar Cuenta" claramente visible
+2. WHEN el administrador selecciona "Eliminar Cuenta", THEN el Sistema SHALL mostrar un diálogo de confirmación con advertencia sobre la irreversibilidad de la acción
+3. WHEN se muestra el diálogo de eliminación, THEN el Sistema SHALL requerir que el administrador escriba el motivo de la eliminación en un campo de texto
+4. WHEN se muestra el diálogo de eliminación, THEN el Sistema SHALL requerir que el administrador escriba exactamente "ACEPTAR" en un campo de verificación para confirmar la acción
+5. WHEN el administrador no escribe "ACEPTAR" exactamente, THEN el Sistema SHALL deshabilitar el botón de confirmación y mostrar mensaje de error
+6. WHEN se confirma la eliminación con todos los campos válidos, THEN el Sistema SHALL eliminar permanentemente la cuenta del usuario de la base de datos
+7. WHEN se elimina una cuenta, THEN el Sistema SHALL eliminar automáticamente todas las reservas del usuario (como viajero y como anfitrión)
+8. WHEN se elimina una cuenta, THEN el Sistema SHALL eliminar automáticamente todas las propiedades/alojamientos del usuario
+9. WHEN se elimina una cuenta, THEN el Sistema SHALL eliminar automáticamente todas las reseñas escritas por el usuario y las reseñas recibidas en sus propiedades
+10. WHEN se elimina una cuenta, THEN el Sistema SHALL eliminar automáticamente todas las fotos de perfil y fotos de propiedades del usuario del storage
+11. WHEN se elimina una cuenta, THEN el Sistema SHALL eliminar automáticamente todos los mensajes de chat del usuario y todas las conversaciones completas donde participaba
+12. WHEN se elimina una cuenta, THEN el Sistema SHALL eliminar automáticamente todas las solicitudes de anfitrión del usuario
+13. WHEN se elimina una cuenta, THEN el Sistema SHALL registrar la acción en el historial de auditoría antes de proceder con la eliminación
+
+### Requisito 7: Restricciones de Seguridad
 
 **User Story:** Como sistema, necesito implementar restricciones de seguridad, para evitar que los administradores gestionen cuentas de otros administradores y mantengan la integridad del sistema.
 
@@ -94,7 +114,7 @@ Este documento define los requisitos para el sistema de gestión de usuarios por
 5. WHEN se detecta un intento de gestionar un administrador, THEN el Sistema SHALL registrar el intento en logs de seguridad
 6. WHEN un administrador intenta cambiar su propio rol o bloquearse, THEN el Sistema SHALL mostrar un mensaje "No puedes gestionar tu propia cuenta"
 
-### Requisito 7: Historial de Acciones Administrativas
+### Requisito 8: Historial de Acciones Administrativas
 
 **User Story:** Como administrador, quiero ver un historial de todas las acciones administrativas realizadas, para mantener un registro de auditoría y transparencia.
 
@@ -107,7 +127,7 @@ Este documento define los requisitos para el sistema de gestión de usuarios por
 5. WHEN se consulta el historial, THEN el Sistema SHALL permitir filtrar por tipo de acción (degradación de rol, bloqueo, desbloqueo)
 6. WHEN se consulta el historial, THEN el Sistema SHALL permitir filtrar por rango de fechas
 
-### Requisito 8: Confirmaciones y Validaciones
+### Requisito 9: Confirmaciones y Validaciones
 
 **User Story:** Como administrador, quiero recibir confirmaciones claras antes de realizar acciones críticas, para evitar cambios accidentales que puedan afectar a los usuarios.
 
@@ -120,7 +140,7 @@ Este documento define los requisitos para el sistema de gestión de usuarios por
 5. WHEN el administrador cancela una acción, THEN el Sistema SHALL cerrar el diálogo sin realizar cambios
 6. WHEN se confirma una acción, THEN el Sistema SHALL mostrar un indicador de carga mientras se procesa
 
-### Requisito 9: Manejo de Errores y Retroalimentación
+### Requisito 10: Manejo de Errores y Retroalimentación
 
 **User Story:** Como administrador, quiero recibir mensajes claros sobre el resultado de mis acciones, para saber si fueron exitosas o si ocurrió algún problema.
 
@@ -133,7 +153,7 @@ Este documento define los requisitos para el sistema de gestión de usuarios por
 5. WHEN se intenta gestionar un usuario que no existe, THEN el Sistema SHALL mostrar un mensaje "El usuario seleccionado no existe o fue eliminado"
 6. WHEN ocurre un error inesperado, THEN el Sistema SHALL mostrar un mensaje genérico y registrar el error detallado en logs
 
-### Requisito 10: Impacto en Funcionalidades Existentes
+### Requisito 11: Impacto en Funcionalidades Existentes
 
 **User Story:** Como sistema, necesito manejar correctamente el impacto de los cambios administrativos en las funcionalidades existentes, para mantener la consistencia de la aplicación.
 

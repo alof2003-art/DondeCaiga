@@ -7,6 +7,8 @@ import '../widgets/user_action_dialog.dart';
 import '../widgets/confirmation_dialog.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/widgets/custom_app_bar_header.dart';
+import '../../../../main.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -147,7 +149,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Panel de Administración'),
+        title: CustomAppBarHeader(
+          supabase: supabase,
+          screenTitle: 'Panel de Administración',
+        ),
         backgroundColor: const Color(0xFF4DB6AC),
         foregroundColor: Colors.white,
       ),
@@ -642,6 +647,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
               ),
             ),
+
+            const SizedBox(height: 8),
+
+            // Botón eliminar cuenta
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _confirmarEliminacion(usuario),
+                icon: const Icon(Icons.delete_forever),
+                label: const Text('Eliminar Cuenta'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade800,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
           ],
         ),
         actions: [
@@ -744,6 +765,28 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
   }
 
+  Future<void> _confirmarEliminacion(UserProfile usuario) async {
+    Navigator.pop(context); // Cerrar diálogo de detalle
+
+    String? reason;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => UserActionDialog(
+        user: usuario,
+        actionType: UserActionType.deleteAccount,
+        onConfirm: (String? dialogReason) {
+          reason = dialogReason;
+          Navigator.of(context).pop(true);
+        },
+        onCancel: () => Navigator.of(context).pop(false),
+      ),
+    );
+
+    if (confirmed == true && reason != null) {
+      await _ejecutarEliminacion(usuario.id, reason!);
+    }
+  }
+
   // ============================================
   // MÉTODOS DE EJECUCIÓN DE ACCIONES
   // ============================================
@@ -825,6 +868,39 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
       final result = await _adminRepository.desbloquearCuentaUsuario(
         userId,
+        _getCurrentUserId(),
+      );
+
+      if (mounted) {
+        Navigator.pop(context); // Cerrar indicador de carga
+
+        if (result.success) {
+          await _mostrarMensaje(result.message);
+          await _cargarDatos(); // Recargar datos
+        } else {
+          await _mostrarMensaje(result.message, esError: true);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Cerrar indicador de carga
+        await _mostrarMensaje('Error inesperado: $e', esError: true);
+      }
+    }
+  }
+
+  Future<void> _ejecutarEliminacion(String userId, String reason) async {
+    try {
+      // Mostrar indicador de carga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final result = await _adminRepository.eliminarCuentaUsuario(
+        userId,
+        reason,
         _getCurrentUserId(),
       );
 

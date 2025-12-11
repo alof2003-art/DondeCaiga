@@ -108,10 +108,22 @@ Este plan implementa el sistema de gestión de usuarios por administrador que pe
   - Validar permisos administrativos
   - Cambiar estado_cuenta de 'bloqueado' a 'activo'
   - Registrar acción en auditoría
-
   - _Requirements: 5.3, 5.5_
 
-- [ ] 3.4 Implementar validaciones de seguridad
+- [x] 3.4 Implementar método eliminarCuentaUsuario
+
+
+  - Validar permisos administrativos y que motivo no esté vacío
+  - Eliminar todas las reservas del usuario (como viajero y anfitrión)
+  - Eliminar todas las propiedades/alojamientos del usuario
+  - Eliminar todas las reseñas del usuario y recibidas en sus propiedades
+  - Eliminar todas las fotos del usuario del storage (perfil y propiedades)
+  - Eliminar todos los mensajes de chat del usuario y conversaciones completas donde participaba
+  - Eliminar todas las solicitudes de anfitrión del usuario
+  - Eliminar finalmente el perfil del usuario
+  - _Requirements: 6.6, 6.7, 6.8, 6.9, 6.10, 6.11, 6.12_
+
+- [ ] 3.5 Implementar validaciones de seguridad
   - Crear método validarPermisosAdmin para verificar permisos
   - Implementar prevención de auto-gestión
 
@@ -121,7 +133,7 @@ Este plan implementa el sistema de gestión de usuarios por administrador que pe
 
 
 
-- [x] 3.5 Escribir pruebas unitarias para AdminRepository
+- [x] 3.6 Escribir pruebas unitarias para AdminRepository
 
   - Probar degradación de anfitrión con creación de solicitud
   - Verificar bloqueo/desbloqueo de cuentas
@@ -161,11 +173,10 @@ Este plan implementa el sistema de gestión de usuarios por administrador que pe
   - _Requirements: 1.1, 1.2, 2.1, 2.2_
 
 - [x] 5.1 Mejorar diálogo _mostrarDetalleUsuario
-
-
   - Agregar botones de acción según rol y estado del usuario
   - Mostrar "Degradar a Viajero" solo para anfitriones
   - Mostrar "Bloquear/Desbloquear" según estado actual
+  - Agregar botón "Eliminar Cuenta" para todos los usuarios no administradores
   - Excluir opciones para administradores
   - _Requirements: 1.2, 3.1, 4.1, 5.1, 6.1_
 
@@ -199,16 +210,17 @@ Este plan implementa el sistema de gestión de usuarios por administrador que pe
 - [ ] 6.1 Crear UserActionDialog
   - Implementar diálogo específico para acciones de usuario
   - Incluir campos para motivo cuando sea requerido
+  - Agregar campo de verificación "ACEPTAR" para eliminación de cuentas
   - Mostrar información clara sobre la acción a realizar
   - Validar entrada antes de permitir confirmación
-  - _Requirements: 8.1, 8.2, 8.3_
+  - _Requirements: 9.1, 9.2, 9.3, 6.4, 6.5_
 
 - [ ] 6.2 Crear ConfirmationDialog reutilizable
   - Implementar diálogo genérico de confirmación
   - Incluir botones "Confirmar" y "Cancelar" estándar
   - Permitir personalización de título y mensaje
   - Agregar indicador de carga durante procesamiento
-  - _Requirements: 8.4, 8.5, 8.6_
+  - _Requirements: 9.4, 9.5, 9.6_
 
 - [x]* 6.3 Escribir pruebas de widget para diálogos
 
@@ -279,6 +291,24 @@ Este plan implementa el sistema de gestión de usuarios por administrador que pe
   - Validar manejo de errores de permisos
   - _Requirements: 8.1, 8.2_
 
+
+- [ ] 8.4 Implementar funcionalidad de eliminación de cuentas en AdminDashboardScreen
+  - Agregar método _confirmarEliminacion para mostrar diálogo especial
+  - Implementar método _ejecutarEliminacion con validaciones completas
+  - Agregar botón "Eliminar Cuenta" en el diálogo de detalle de usuario
+  - Mostrar advertencias específicas sobre la irreversibilidad de la acción
+
+
+  - _Requirements: 6.1, 6.2, 6.3_
+
+- [ ] 8.5 Crear diálogo especializado para eliminación de cuentas
+  - Implementar DeleteAccountDialog con campos específicos
+  - Campo obligatorio para motivo de eliminación
+  - Campo de verificación que requiere escribir exactamente "ACEPTAR"
+  - Validación en tiempo real del campo de verificación
+  - Deshabilitar botón de confirmación hasta que todos los campos sean válidos
+  - _Requirements: 6.3, 6.4, 6.5_
+
 - [ ] 9. Implementar notificaciones por email
   - Integrar con sistema de email de Supabase
   - Crear plantillas de email para diferentes acciones
@@ -339,8 +369,20 @@ Este plan implementa el sistema de gestión de usuarios por administrador que pe
   - Verificar que todas las acciones se registren correctamente en auditoría
   - **Validates: Requirements 4.6, 5.5, 6.5, 7.1**
 
-- [ ]* 10.6 Escribir pruebas de propiedades adicionales
-  - Implementar pruebas para las 22 propiedades restantes
+- [ ]* 10.6 Escribir prueba de propiedad para eliminación completa de datos
+  - **Property 28: Eliminación completa de datos de usuario**
+  - Generar usuarios aleatorios con datos asociados (propiedades, reservas, etc.)
+  - Verificar que al eliminar usuario se borren todos sus datos relacionados
+  - **Validates: Requirements 6.7, 6.8, 6.9, 6.10, 6.11, 6.12**
+
+- [ ]* 10.7 Escribir prueba de propiedad para validación "ACEPTAR"
+  - **Property 30: Validación de confirmación "ACEPTAR"**
+  - Generar diferentes variaciones de texto de confirmación
+  - Verificar que solo "ACEPTAR" exacto habilite la eliminación
+  - **Validates: Requirements 6.4, 6.5**
+
+- [ ]* 10.8 Escribir pruebas de propiedades adicionales
+  - Implementar pruebas para las propiedades restantes
   - Cubrir filtrado, ordenamiento, cambios de estado, etc.
   - Asegurar cobertura completa de todos los comportamientos universales
   - **Validates: Todas las propiedades de correctness restantes**

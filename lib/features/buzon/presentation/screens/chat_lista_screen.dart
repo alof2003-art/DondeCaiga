@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:donde_caigav2/main.dart';
-import 'package:donde_caigav2/features/reservas/data/models/reserva.dart';
-import 'package:donde_caigav2/features/reservas/data/repositories/reserva_repository.dart';
-import 'package:donde_caigav2/features/chat/presentation/screens/chat_conversacion_screen.dart';
+import 'package:donde_caigav2/core/widgets/custom_app_bar_header.dart';
+import '../widgets/apartado_mis_viajes.dart';
+import '../widgets/apartado_mis_reservas.dart';
+import '../widgets/filtros_chat_dialog.dart';
+import '../../data/models/chat_apartado.dart';
+import '../../data/models/filtro_chat.dart';
+import '../../data/repositories/chat_repository.dart';
+import '../../data/services/services.dart';
 
 class ChatListaScreen extends StatefulWidget {
   const ChatListaScreen({super.key});
@@ -12,295 +16,301 @@ class ChatListaScreen extends StatefulWidget {
   State<ChatListaScreen> createState() => _ChatListaScreenState();
 }
 
-class _ChatListaScreenState extends State<ChatListaScreen> {
-  late final ReservaRepository _reservaRepository;
-  List<Reserva> _reservas = [];
-  bool _isLoading = true;
-  final Map<String, bool> _codigosVisibles = {};
+class _ChatListaScreenState extends State<ChatListaScreen>
+    with TickerProviderStateMixin {
+  late final ChatRepository _chatRepository;
+  late final ChatFilterService _filterService;
+  late final FilterStorage _persistenciaService;
+  late final TabController _tabController;
+
+  // Estado de los apartados
+  ChatApartado? _apartadoMisViajes;
+  ChatApartado? _apartadoMisReservas;
+  bool _isLoadingViajes = true;
+  bool _isLoadingReservas = true;
+
+  // Filtros por apartado
+  FiltroChat _filtroViajes = FiltroChat.vacio();
+  FiltroChat _filtroReservas = FiltroChat.vacio();
+
+  // Estado del usuario
+  bool _esAnfitrion = false;
 
   @override
   void initState() {
     super.initState();
-    _reservaRepository = ReservaRepository(supabase);
-    _cargarReservas();
+    _chatRepository = ChatRepository(supabase);
+    _filterService = ChatFilterService();
+    _persistenciaService = FilterStorage();
+    _tabController = TabController(length: 2, vsync: this);
+
+    _inicializar();
   }
 
-  Future<void> _cargarReservas() async {
-    setState(() => _isLoading = true);
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _inicializar() async {
+    await _cargarFiltrosGuardados();
+    await _verificarEsAnfitrion();
+    await _cargarDatos();
+  }
+
+  Future<void> _cargarFiltrosGuardados() async {
+    try {
+      _filtroViajes = await _persistenciaService.cargarFiltros(
+        TipoApartado.misViajes,
+      );
+      _filtroReservas = await _persistenciaService.cargarFiltros(
+        TipoApartado.misReservas,
+      );
+    } catch (e) {
+      // En caso de error, usar filtros vacíos
+    }
+  }
+
+  Future<void> _verificarEsAnfitrion() async {
+    final user = supabase.auth.currentUser;
+    if (user != null) {
+      _esAnfitrion = await _chatRepository.esAnfitrion(user.id);
+    }
+  }
+
+  Future<void> _cargarDatos() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    // Cargar datos de ambos apartados en paralelo
+    await Future.wait([
+      _cargarDatosMisViajes(user.id),
+      _cargarDatosMisReservas(user.id),
+    ]);
+  }
+
+  Future<void> _cargarDatosMisViajes(String userId) async {
+    setState(() => _isLoadingViajes = true);
 
     try {
-      final user = supabase.auth.currentUser;
-      if (user != null) {
-        // Obtener reservas confirmadas del viajero
-        final reservasViajero = await _reservaRepository.obtenerReservasViajero(
-          user.id,
-        );
+      final reservasVigentes = await _chatRepository
+          .obtenerReservasViajeroVigentes(userId);
+      final reservasPasadas = await _chatRepository
+          .obtenerReservasViajeroPasadas(userId);
 
-        // Obtener reservas confirmadas del anfitrión
-        final reservasAnfitrion = await _reservaRepository
-            .obtenerReservasAnfitrion(user.id);
+      // Aplicar filtros
+      final reservasVigentesFiltradas = _filterService.aplicarFiltros(
+        reservasVigentes,
+        _filtroViajes,
+      );
+      final reservasPasadasFiltradas = _filterService.aplicarFiltros(
+        reservasPasadas,
+        _filtroViajes,
+      );
 
-        // Combinar ambas listas
-        final todasReservas = [...reservasViajero, ...reservasAnfitrion];
-
-        if (mounted) {
-          setState(() {
-            _reservas = todasReservas;
-            _isLoading = false;
-          });
-        }
+      if (mounted) {
+        setState(() {
+          _apartadoMisViajes = ChatApartado.misViajes(
+            reservasVigentes: reservasVigentesFiltradas,
+            reservasPasadas: reservasPasadasFiltradas,
+          );
+          _isLoadingViajes = false;
+        });
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _apartadoMisViajes = ChatApartado.misViajes(
+            reservasVigentes: [],
+            reservasPasadas: [],
+          );
+          _isLoadingViajes = false;
+        });
       }
     }
   }
 
-  void _toggleCodigoVisible(String reservaId) {
-    setState(() {
-      _codigosVisibles[reservaId] = !(_codigosVisibles[reservaId] ?? false);
-    });
+  Future<void> _cargarDatosMisReservas(String userId) async {
+    setState(() => _isLoadingReservas = true);
+
+    try {
+      final reservasVigentes = await _chatRepository
+          .obtenerReservasAnfitrionVigentes(userId);
+      final reservasPasadas = await _chatRepository
+          .obtenerReservasAnfitrionPasadas(userId);
+
+      // Aplicar filtros
+      final reservasVigentesFiltradas = _filterService.aplicarFiltros(
+        reservasVigentes,
+        _filtroReservas,
+      );
+      final reservasPasadasFiltradas = _filterService.aplicarFiltros(
+        reservasPasadas,
+        _filtroReservas,
+      );
+
+      if (mounted) {
+        setState(() {
+          _apartadoMisReservas = ChatApartado.misReservas(
+            reservasVigentes: reservasVigentesFiltradas,
+            reservasPasadas: reservasPasadasFiltradas,
+          );
+          _isLoadingReservas = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _apartadoMisReservas = ChatApartado.misReservas(
+            reservasVigentes: [],
+            reservasPasadas: [],
+          );
+          _isLoadingReservas = false;
+        });
+      }
+    }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chat'),
-        backgroundColor: const Color(0xFF4DB6AC),
-        foregroundColor: Colors.white,
+  Future<void> _aplicarFiltros(TipoApartado tipo, FiltroChat filtro) async {
+    // Guardar filtros
+    await _persistenciaService.guardarFiltros(tipo, filtro);
+
+    // Actualizar estado local
+    setState(() {
+      if (tipo == TipoApartado.misViajes) {
+        _filtroViajes = filtro;
+      } else {
+        _filtroReservas = filtro;
+      }
+    });
+
+    // Recargar datos con nuevos filtros
+    final user = supabase.auth.currentUser;
+    if (user != null) {
+      if (tipo == TipoApartado.misViajes) {
+        await _cargarDatosMisViajes(user.id);
+      } else {
+        await _cargarDatosMisReservas(user.id);
+      }
+    }
+  }
+
+  void _mostrarDialogoFiltros() {
+    final apartadoActual = _tabController.index == 0
+        ? TipoApartado.misViajes
+        : TipoApartado.misReservas;
+
+    final filtroActual = apartadoActual == TipoApartado.misViajes
+        ? _filtroViajes
+        : _filtroReservas;
+
+    showDialog(
+      context: context,
+      builder: (context) => FiltrosChatDialog(
+        filtroActual: filtroActual,
+        apartado: apartadoActual,
+        onAplicarFiltros: (filtro) => _aplicarFiltros(apartadoActual, filtro),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _reservas.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.chat_bubble_outline,
-                    size: 80,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No tienes chats activos',
-                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tus reservas confirmadas aparecerán aquí',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                  ),
-                ],
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: _cargarReservas,
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _reservas.length,
-                itemBuilder: (context, index) {
-                  final reserva = _reservas[index];
-                  return _ReservaCard(
-                    reserva: reserva,
-                    codigoVisible: _codigosVisibles[reserva.id] ?? false,
-                    onToggleCodigo: () => _toggleCodigoVisible(reserva.id),
-                  );
-                },
-              ),
-            ),
     );
   }
-}
 
-class _ReservaCard extends StatelessWidget {
-  final Reserva reserva;
-  final bool codigoVisible;
-  final VoidCallback onToggleCodigo;
+  Future<void> _refrescar() async {
+    await _cargarDatos();
+  }
 
-  const _ReservaCard({
-    required this.reserva,
-    required this.codigoVisible,
-    required this.onToggleCodigo,
-  });
+  void _onResenaCreada() {
+    // Callback para cuando se crea una reseña
+    _refrescar();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final user = supabase.auth.currentUser;
-    final esViajero = user?.id == reserva.viajeroId;
-    final otroUsuario = esViajero
-        ? (reserva.nombreAnfitrion ?? 'Anfitrión')
-        : (reserva.nombreViajero ?? 'Viajero');
-    final rolOtroUsuario = esViajero ? 'Anfitrión' : 'Viajero';
+    final apartadoActual = _tabController.index == 0
+        ? TipoApartado.misViajes
+        : TipoApartado.misReservas;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header: Propiedad y Estado
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4DB6AC).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.home,
-                    color: Color(0xFF4DB6AC),
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        reserva.tituloPropiedad ?? 'Propiedad',
+    final filtroActual = apartadoActual == TipoApartado.misViajes
+        ? _filtroViajes
+        : _filtroReservas;
+
+    final tienesFiltrosActivos = filtroActual.tienesFiltrosAplicados;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: CustomAppBarHeader(supabase: supabase, screenTitle: 'Chat'),
+        backgroundColor: const Color(0xFF4DB6AC),
+        foregroundColor: Colors.white,
+        actions: [
+          // Botón de filtros con indicador
+          Stack(
+            children: [
+              IconButton(
+                onPressed: _mostrarDialogoFiltros,
+                icon: const Icon(Icons.filter_list),
+                tooltip: 'Filtros',
+              ),
+              if (tienesFiltrosActivos)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: const BoxDecoration(
+                      color: Colors.orange,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${filtroActual.numeroFiltrosActivos}',
                         style: const TextStyle(
-                          fontSize: 16,
+                          color: Colors.white,
+                          fontSize: 8,
                           fontWeight: FontWeight.bold,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$rolOtroUsuario: $otroUsuario • ${DateFormat('dd/MM/yyyy').format(reserva.fechaInicio)} - ${DateFormat('dd/MM/yyyy').format(reserva.fechaFin)}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.green),
-                  ),
-                  child: const Text(
-                    'ACEPTADA',
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10,
                     ),
                   ),
                 ),
-              ],
+            ],
+          ),
+        ],
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          tabs: [
+            Tab(
+              icon: Icon(TipoApartado.misViajes.icono),
+              text: TipoApartado.misViajes.titulo,
             ),
-
-            const SizedBox(height: 16),
-
-            // Código de Verificación
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.blue.withValues(alpha: 0.3),
-                  width: 2,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.verified_user,
-                        color: Colors.blue,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Código de Verificación',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        codigoVisible
-                            ? (reserva.codigoVerificacion ?? '------')
-                            : '• • • • • •',
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 8,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      IconButton(
-                        onPressed: onToggleCodigo,
-                        icon: Icon(
-                          codigoVisible
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          color: Colors.blue,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Muestra este código al anfitrión al llegar',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Botón de Chat
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          ChatConversacionScreen(reserva: reserva),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.chat_bubble, size: 20),
-                label: const Text('Abrir Chat'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4DB6AC),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
+            Tab(
+              icon: Icon(TipoApartado.misReservas.icono),
+              text: TipoApartado.misReservas.titulo,
             ),
           ],
         ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          // Apartado Mis Viajes
+          ApartadoMisViajes(
+            apartado: _apartadoMisViajes,
+            isLoading: _isLoadingViajes,
+            onRefresh: _refrescar,
+            onResenaCreada: _onResenaCreada,
+          ),
+          // Apartado Mis Reservas
+          ApartadoMisReservas(
+            apartado: _apartadoMisReservas,
+            isLoading: _isLoadingReservas,
+            esAnfitrion: _esAnfitrion,
+            onRefresh: _refrescar,
+          ),
+        ],
       ),
     );
   }

@@ -457,4 +457,156 @@ class AdminRepository {
       return AdminActionResult.unknownError(e.toString());
     }
   }
+
+  /// Eliminar cuenta de usuario permanentemente
+  Future<AdminActionResult> eliminarCuentaUsuario(
+    String userId,
+    String reason,
+    String adminId,
+  ) async {
+    try {
+      // Validar permisos
+      if (!await validarPermisosAdmin(adminId, userId)) {
+        return AdminActionResult.permissionDenied();
+      }
+
+      // Verificar que el motivo no esté vacío
+      if (reason.trim().isEmpty) {
+        return AdminActionResult.missingReason();
+      }
+
+      // Obtener información del usuario
+      final userResponse = await _supabase
+          .from('users_profiles')
+          .select('nombre, rol_id, foto_perfil_url')
+          .eq('id', userId)
+          .single();
+
+      // Verificar que el usuario existe
+      if (userResponse.isEmpty) {
+        return AdminActionResult.userNotFound();
+      }
+
+      // Crear acción de auditoría ANTES de eliminar
+      final action = AdminAction.deleteAccount(
+        adminId: adminId,
+        targetUserId: userId,
+        reason: reason,
+      );
+
+      // Registrar en auditoría ANTES de eliminar
+      await _auditRepository.registrarAccionAdmin(action, wasSuccessful: true);
+
+      try {
+        // Iniciar eliminación completa
+        await _eliminarDatosCompletos(userId);
+
+        return AdminActionResult.success(
+          message:
+              'Cuenta de ${userResponse['nombre']} eliminada permanentemente. Todos los datos asociados han sido borrados.',
+          data: {
+            'user_name': userResponse['nombre'],
+            'reason': reason,
+            'deleted_at': DateTime.now().toIso8601String(),
+          },
+        );
+      } catch (e) {
+        // Registrar fallo en auditoría
+        await _auditRepository.registrarAccionAdmin(
+          AdminAction.deleteAccount(
+            adminId: adminId,
+            targetUserId: userId,
+            reason: reason,
+          ),
+          wasSuccessful: false,
+        );
+
+        return AdminActionResult.failure(
+          message: 'Error al eliminar la cuenta: ${e.toString()}',
+          errorCode: 'DELETE_FAILED',
+        );
+      }
+    } catch (e) {
+      return AdminActionResult.unknownError(e.toString());
+    }
+  }
+
+  /// Método privado para eliminar todos los datos del usuario
+  Future<void> _eliminarDatosCompletos(String userId) async {
+    // 1. Eliminar todas las reservas del usuario (como viajero)
+    await _supabase.from('reservas').delete().eq('viajero_id', userId);
+
+    // 2. Eliminar todas las reservas en propiedades del usuario (como anfitrión)
+    final propiedadesUsuario = await _supabase
+        .from('propiedades')
+        .select('id')
+        .eq('anfitrion_id', userId);
+
+    for (final propiedad in propiedadesUsuario) {
+      await _supabase
+          .from('reservas')
+          .delete()
+          .eq('propiedad_id', propiedad['id']);
+    }
+
+    // 3. Eliminar todas las reseñas escritas por el usuario
+    await _supabase.from('resenas').delete().eq('viajero_id', userId);
+
+    // 4. Eliminar todas las reseñas recibidas en propiedades del usuario
+    for (final propiedad in propiedadesUsuario) {
+      await _supabase
+          .from('resenas')
+          .delete()
+          .eq('propiedad_id', propiedad['id']);
+    }
+
+    // 5. Eliminar fotos de propiedades del storage
+    for (final propiedad in propiedadesUsuario) {
+      final fotosPropiedad = await _supabase
+          .from('fotos_propiedades')
+          .select('url_foto')
+          .eq('propiedad_id', propiedad['id']);
+
+      for (final foto in fotosPropiedad) {
+        final fileName = foto['url_foto'].toString().split('/').last;
+        await _supabase.storage.from('propiedades-fotos').remove([fileName]);
+      }
+
+      // Eliminar registros de fotos de propiedades
+      await _supabase
+          .from('fotos_propiedades')
+          .delete()
+          .eq('propiedad_id', propiedad['id']);
+    }
+
+    // 6. Eliminar todas las propiedades del usuario
+    await _supabase.from('propiedades').delete().eq('anfitrion_id', userId);
+
+    // 7. Eliminar todos los mensajes de chat del usuario
+    await _supabase.from('mensajes').delete().eq('remitente_id', userId);
+
+    // 9. Eliminar todas las solicitudes de anfitrión del usuario
+    await _supabase
+        .from('solicitudes_anfitrion')
+        .delete()
+        .eq('usuario_id', userId);
+
+    // 10. Eliminar foto de perfil del storage
+    final userProfile = await _supabase
+        .from('users_profiles')
+        .select('foto_perfil_url')
+        .eq('id', userId)
+        .single();
+
+    if (userProfile['foto_perfil_url'] != null) {
+      final fileName = userProfile['foto_perfil_url']
+          .toString()
+          .split('/')
+          .last;
+      await _supabase.storage.from('profile-photos').remove([fileName]);
+    }
+
+    // 11. Finalmente, eliminar el perfil del usuario
+    await _supabase.from('users_profiles').delete().eq('id', userId);
+  }
 }

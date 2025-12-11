@@ -15,8 +15,8 @@ void main() {
         'should return false when admin and target are the same user',
         () async {
           // Esta prueba requiere mock de Supabase, por ahora validamos la lógica
-          const adminId = 'admin-123';
-          const targetId = 'admin-123'; // Mismo ID
+          // const adminId = 'admin-123';
+          // const targetId = 'admin-123'; // Mismo ID
 
           // En implementación real, esto debería retornar false
           // expect(await repository.validarPermisosAdmin(adminId, targetId), isFalse);

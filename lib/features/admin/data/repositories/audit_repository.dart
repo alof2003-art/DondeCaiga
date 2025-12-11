@@ -21,8 +21,8 @@ class AuditRepository {
       });
     } catch (e) {
       // Log el error pero no fallar la operación principal
-      print('Error al registrar acción en auditoría: $e');
-      // En producción, esto debería usar un sistema de logging apropiado
+      // TODO: Implementar sistema de logging apropiado en producción
+      // print('Error al registrar acción en auditoría: $e');
     }
   }
 
