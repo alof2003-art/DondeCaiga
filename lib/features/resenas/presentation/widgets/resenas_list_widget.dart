@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../../main.dart';
 import '../../data/models/resena.dart';
-import '../../data/repositories/resena_repository.dart';
+import '../../data/repositories/resenas_repository.dart';
 
 class ResenasListWidget extends StatefulWidget {
   final String propiedadId;
@@ -12,7 +13,7 @@ class ResenasListWidget extends StatefulWidget {
 }
 
 class _ResenasListWidgetState extends State<ResenasListWidget> {
-  final ResenaRepository _resenaRepository = ResenaRepository();
+  late final ResenasRepository _resenasRepository;
   List<Resena> _resenas = [];
   bool _isLoading = true;
   double _promedioCalificacion = 0.0;
@@ -20,6 +21,7 @@ class _ResenasListWidgetState extends State<ResenasListWidget> {
   @override
   void initState() {
     super.initState();
+    _resenasRepository = ResenasRepository(supabase);
     _cargarResenas();
   }
 
@@ -27,7 +29,7 @@ class _ResenasListWidgetState extends State<ResenasListWidget> {
     try {
       setState(() => _isLoading = true);
 
-      final resenas = await _resenaRepository.obtenerResenasPorPropiedad(
+      final resenas = await _resenasRepository.getResenasPorPropiedad(
         widget.propiedadId,
       );
 
@@ -146,7 +148,7 @@ class _ResenaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final nombreViajero = resena.nombreViajero ?? 'Usuario';
+    final nombreViajero = resena.nombreViajero;
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -185,7 +187,7 @@ class _ResenaCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      _formatearFecha(resena.createdAt),
+                      _formatearFecha(resena.fechaCreacion),
                       style: TextStyle(color: Colors.grey[600], fontSize: 12),
                     ),
                   ],

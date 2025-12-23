@@ -190,7 +190,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
               const SizedBox(height: 12),
               Text(
                 'Toca para cambiar foto',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                style: Theme.of(context).textTheme.bodySmall,
               ),
 
               const SizedBox(height: 40),
@@ -206,7 +206,6 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: Colors.grey[50],
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {

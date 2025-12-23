@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../data/models/chat_apartado.dart';
 import '../../data/models/reserva_chat_info.dart';
+import '../../data/models/filtro_chat.dart';
 import 'reserva_card_viajero.dart';
 import '../../../../main.dart';
+import '../../../../core/config/performance_config.dart';
 
 class ApartadoMisViajes extends StatelessWidget {
   final ChatApartado? apartado;
   final bool isLoading;
   final VoidCallback onRefresh;
   final VoidCallback? onResenaCreada;
+  final FiltroChat?
+  filtroActivo; // Nuevo parámetro para saber qué filtros están activos
 
   const ApartadoMisViajes({
     super.key,
@@ -16,6 +20,7 @@ class ApartadoMisViajes extends StatelessWidget {
     required this.isLoading,
     required this.onRefresh,
     this.onResenaCreada,
+    this.filtroActivo, // Opcional
   });
 
   @override
@@ -39,56 +44,64 @@ class ApartadoMisViajes extends StatelessWidget {
       return _buildSinViajesMessage(context);
     }
 
+    // Determinar qué secciones mostrar basándose en los filtros activos
+    final mostrarVigentes = _deberMostrarSeccionVigentes(reservasVigentes);
+    final mostrarPasadas = _deberMostrarSeccionPasadas(reservasPasadas);
+
     return RefreshIndicator(
       onRefresh: () async => onRefresh(),
       color: const Color(0xFF2196F3),
       child: CustomScrollView(
+        physics: PerformanceConfig.optimizedScrollPhysics, // Física optimizada
+        cacheExtent: PerformanceConfig.defaultCacheExtent, // Cache optimizado
         slivers: [
-          // Sección de reserva vigente (destacada)
-          if (reservasVigentes.isNotEmpty) ...[
+          // Sección de reserva vigente (destacada) - solo si debe mostrarse
+          if (mostrarVigentes && reservasVigentes.isNotEmpty) ...[
             SliverToBoxAdapter(
               child: _buildSeccionReservaVigente(reservasVigentes.first),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
           ],
 
-          // Sección de lugares visitados (siempre mostrar)
-          SliverToBoxAdapter(
-            child: _buildSeccionHeader(
-              'Lugares Visitados',
-              reservasPasadas.length,
-              const Color(0xFF2196F3),
+          // Sección de lugares visitados (solo si debe mostrarse)
+          if (mostrarPasadas) ...[
+            SliverToBoxAdapter(
+              child: _buildSeccionHeader(
+                'Lugares Visitados',
+                reservasPasadas.length,
+                const Color(0xFF2196F3),
+              ),
             ),
-          ),
 
-          // Contenido de lugares visitados
-          if (reservasPasadas.isNotEmpty) ...[
-            SliverList(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final user = supabase.auth.currentUser;
-                if (user == null) return Container();
+            // Contenido de lugares visitados
+            if (reservasPasadas.isNotEmpty) ...[
+              SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final user = supabase.auth.currentUser;
+                  if (user == null) return Container();
 
-                final reservaInfo = ReservaChatInfo.fromReserva(
-                  reservasPasadas[index],
-                  usuarioActualId: user.id,
-                );
+                  final reservaInfo = ReservaChatInfo.fromReserva(
+                    reservasPasadas[index],
+                    usuarioActualId: user.id,
+                  );
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  child: ReservaCardViajero(
-                    reserva: reservaInfo,
-                    esVigente: false,
-                    onResenaCreada: onResenaCreada,
-                  ),
-                );
-              }, childCount: reservasPasadas.length),
-            ),
-          ] else ...[
-            // Mensaje cuando no hay viajes pasados
-            SliverToBoxAdapter(child: _buildMensajeSinViajes()),
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    child: ReservaCardViajero(
+                      reserva: reservaInfo,
+                      esVigente: false,
+                      onResenaCreada: onResenaCreada,
+                    ),
+                  );
+                }, childCount: reservasPasadas.length),
+              ),
+            ] else ...[
+              // Mensaje cuando no hay viajes pasados
+              SliverToBoxAdapter(child: _buildMensajeSinViajes(context)),
+            ],
           ],
 
           // Espacio adicional al final
@@ -96,6 +109,38 @@ class ApartadoMisViajes extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Determina si debe mostrar la sección de reservas vigentes
+  bool _deberMostrarSeccionVigentes(List<dynamic> reservasVigentes) {
+    // Si no hay filtro activo, siempre mostrar
+    if (filtroActivo == null || !filtroActivo!.tienesFiltrosAplicados) {
+      return true;
+    }
+
+    // Si el filtro es específicamente "Solo pasadas", no mostrar vigentes
+    if (filtroActivo!.estadoFiltro == EstadoFiltro.pasadas) {
+      return false;
+    }
+
+    // En cualquier otro caso, mostrar si hay contenido o si no es filtro de estado
+    return true;
+  }
+
+  /// Determina si debe mostrar la sección de reservas pasadas
+  bool _deberMostrarSeccionPasadas(List<dynamic> reservasPasadas) {
+    // Si no hay filtro activo, siempre mostrar
+    if (filtroActivo == null || !filtroActivo!.tienesFiltrosAplicados) {
+      return true;
+    }
+
+    // Si el filtro es específicamente "Solo vigentes", no mostrar pasadas
+    if (filtroActivo!.estadoFiltro == EstadoFiltro.vigentes) {
+      return false;
+    }
+
+    // En cualquier otro caso, mostrar si hay contenido o si no es filtro de estado
+    return true;
   }
 
   Widget _buildSeccionReservaVigente(dynamic reserva) {
@@ -237,7 +282,7 @@ class ApartadoMisViajes extends StatelessWidget {
     );
   }
 
-  Widget _buildMensajeSinViajes() {
+  Widget _buildMensajeSinViajes(BuildContext context) {
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(24),
@@ -250,21 +295,34 @@ class ApartadoMisViajes extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(Icons.luggage_outlined, size: 48, color: Colors.grey[500]),
+          Icon(
+            Icons.luggage_outlined,
+            size: 48,
+            color: const Color(
+              0xFF757575,
+            ), // Gris medio que se ve bien en ambos modos
+          ),
           const SizedBox(height: 16),
           Text(
             'Todavía no se registran viajes',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
+              color: Color(
+                0xFF424242,
+              ), // Gris oscuro que se ve bien en ambos modos
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
             'Cuando completes tus primeros viajes, aparecerán aquí',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(
+                0xFF424242,
+              ), // Gris oscuro que se ve bien en ambos modos
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -277,6 +335,8 @@ class ApartadoMisViajes extends StatelessWidget {
       onRefresh: () async => onRefresh(),
       color: const Color(0xFF2196F3),
       child: CustomScrollView(
+        physics: PerformanceConfig.optimizedScrollPhysics, // Física optimizada
+        cacheExtent: PerformanceConfig.defaultCacheExtent, // Cache optimizado
         slivers: [
           // Sección de lugares visitados (siempre mostrar)
           SliverToBoxAdapter(
@@ -288,7 +348,7 @@ class ApartadoMisViajes extends StatelessWidget {
           ),
 
           // Mensaje cuando no hay viajes
-          SliverToBoxAdapter(child: _buildMensajeSinViajes()),
+          SliverToBoxAdapter(child: _buildMensajeSinViajes(context)),
 
           // Espacio adicional al final
           const SliverToBoxAdapter(child: SizedBox(height: 80)),
@@ -304,23 +364,33 @@ class ApartadoMisViajes extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 80, color: Colors.grey[400]),
+            Icon(
+              Icons.error_outline,
+              size: 80,
+              color: const Color(
+                0xFF757575,
+              ), // Gris medio que se ve bien en ambos modos
+            ),
             const SizedBox(height: 24),
             Text(
               'Error al Cargar',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
+                color: Color(
+                  0xFF424242,
+                ), // Gris oscuro que se ve bien en ambos modos
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             Text(
               'Hubo un problema al cargar tus viajes. Intenta nuevamente.',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
-                color: Colors.grey[600],
+                color: Color(
+                  0xFF424242,
+                ), // Gris oscuro que se ve bien en ambos modos
                 height: 1.5,
               ),
               textAlign: TextAlign.center,

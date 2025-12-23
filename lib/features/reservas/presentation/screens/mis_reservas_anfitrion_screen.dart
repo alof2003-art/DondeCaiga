@@ -189,16 +189,16 @@ class _MisReservasAnfitrionScreenState
                         Icon(
                           Icons.calendar_today,
                           size: 80,
-                          color: Colors.grey[400],
+                          color: const Color(0xFF757575),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           _filtroEstado == 'todas'
                               ? 'No tienes reservas'
                               : 'No hay reservas ${_filtroEstado}s',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 18,
-                            color: Colors.grey[600],
+                            color: Color(0xFF424242),
                           ),
                         ),
                       ],
@@ -208,6 +208,9 @@ class _MisReservasAnfitrionScreenState
                     onRefresh: _cargarReservas,
                     child: ListView.builder(
                       padding: const EdgeInsets.all(16),
+                      physics:
+                          const BouncingScrollPhysics(), // Física más suave
+                      cacheExtent: 200, // Cache para mejor rendimiento
                       itemCount: _reservasFiltradas.length,
                       itemBuilder: (context, index) {
                         final reserva = _reservasFiltradas[index];
@@ -258,7 +261,7 @@ class _FiltroChip extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.grey[700],
+                color: isSelected ? Colors.white : const Color(0xFF424242),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -406,7 +409,10 @@ class _ReservaCard extends StatelessWidget {
                     children: [
                       const Text(
                         'Viajero',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF757575),
+                        ),
                       ),
                       Text(
                         reserva.nombreViajero ?? 'Usuario',
@@ -438,9 +444,9 @@ class _ReservaCard extends StatelessWidget {
                       children: [
                         Text(
                           'Inicio',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: Color(0xFF757575),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -454,16 +460,16 @@ class _ReservaCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Icon(Icons.arrow_forward, color: Colors.grey[600]),
+                  Icon(Icons.arrow_forward, color: const Color(0xFF757575)),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
                           'Fin',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: Color(0xFF757575),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -487,13 +493,17 @@ class _ReservaCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+                Icon(
+                  Icons.calendar_today,
+                  size: 16,
+                  color: const Color(0xFF757575),
+                ),
                 const SizedBox(width: 4),
                 Text(
                   '${reserva.duracionDias} ${reserva.duracionDias == 1 ? 'día' : 'días'}',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[700],
+                    color: Color(0xFF424242),
                     fontWeight: FontWeight.w600,
                   ),
                 ),

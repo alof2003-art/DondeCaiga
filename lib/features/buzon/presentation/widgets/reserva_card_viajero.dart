@@ -4,6 +4,7 @@ import '../../data/models/reserva_chat_info.dart';
 import '../../../chat/presentation/screens/chat_conversacion_screen.dart';
 import '../../../reservas/data/models/reserva.dart';
 import '../../../explorar/presentation/screens/detalle_propiedad_screen.dart';
+import '../../../resenas/presentation/screens/crear_resena_screen.dart';
 
 class ReservaCardViajero extends StatefulWidget {
   final ReservaChatInfo reserva;
@@ -129,7 +130,10 @@ class _ReservaCardViajeroState extends State<ReservaCardViajero> {
               const SizedBox(height: 2),
               Text(
                 'Ciudad', // TODO: Agregar ciudad a modelo
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF424242), // Color fijo como en Mis Viajes
+                ),
               ),
             ],
           ),
@@ -139,7 +143,9 @@ class _ReservaCardViajeroState extends State<ReservaCardViajero> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: esVigente ? colorPrincipal : Colors.grey[400],
+            color: esVigente
+                ? colorPrincipal
+                : Theme.of(context).colorScheme.outline,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -159,7 +165,9 @@ class _ReservaCardViajeroState extends State<ReservaCardViajero> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.7),
+        color: Colors.white.withValues(
+          alpha: 0.9,
+        ), // Fondo blanco como en Mis Viajes
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: colorPrincipal.withValues(alpha: 0.2)),
       ),
@@ -189,6 +197,7 @@ class _ReservaCardViajeroState extends State<ReservaCardViajero> {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
+                    color: Color(0xFF424242), // Color fijo como en Mis Viajes
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -198,7 +207,12 @@ class _ReservaCardViajeroState extends State<ReservaCardViajero> {
                     const SizedBox(width: 4),
                     Text(
                       '5.0', // TODO: Agregar calificación a modelo
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(
+                          0xFF424242,
+                        ), // Color fijo como en Mis Viajes
+                      ),
                     ),
                   ],
                 ),
@@ -216,7 +230,9 @@ class _ReservaCardViajeroState extends State<ReservaCardViajero> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.7),
+        color: Colors.white.withValues(
+          alpha: 0.9,
+        ), // Fondo blanco como en Mis Viajes
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: colorPrincipal.withValues(alpha: 0.2)),
       ),
@@ -237,11 +253,14 @@ class _ReservaCardViajeroState extends State<ReservaCardViajero> {
                           size: 16,
                         ),
                         const SizedBox(width: 4),
-                        const Text(
+                        Text(
                           'Llegada',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
+                            color: Color(
+                              0xFF424242,
+                            ), // Color fijo como en Mis Viajes
                           ),
                         ),
                       ],
@@ -249,7 +268,12 @@ class _ReservaCardViajeroState extends State<ReservaCardViajero> {
                     const SizedBox(height: 2),
                     Text(
                       formatoFecha.format(reserva.fechaInicio),
-                      style: const TextStyle(fontSize: 14),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(
+                          0xFF424242,
+                        ), // Color fijo como en Mis Viajes
+                      ),
                     ),
                   ],
                 ),
@@ -266,11 +290,14 @@ class _ReservaCardViajeroState extends State<ReservaCardViajero> {
                           size: 16,
                         ),
                         const SizedBox(width: 4),
-                        const Text(
+                        Text(
                           'Salida',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
+                            color: Color(
+                              0xFF424242,
+                            ), // Color fijo como en Mis Viajes
                           ),
                         ),
                       ],
@@ -278,7 +305,12 @@ class _ReservaCardViajeroState extends State<ReservaCardViajero> {
                     const SizedBox(height: 2),
                     Text(
                       formatoFecha.format(reserva.fechaFin),
-                      style: const TextStyle(fontSize: 14),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(
+                          0xFF424242,
+                        ), // Color fijo como en Mis Viajes
+                      ),
                     ),
                   ],
                 ),
@@ -298,6 +330,7 @@ class _ReservaCardViajeroState extends State<ReservaCardViajero> {
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
+                  color: Color(0xFF424242), // Color fijo como en Mis Viajes
                 ),
               ),
               const Spacer(),
@@ -315,7 +348,10 @@ class _ReservaCardViajeroState extends State<ReservaCardViajero> {
               if (!esVigente)
                 Text(
                   _calcularTiempoTranscurrido(),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF424242), // Color fijo como en Mis Viajes
+                  ),
                 ),
             ],
           ),
@@ -395,9 +431,7 @@ class _ReservaCardViajeroState extends State<ReservaCardViajero> {
                   icon: const Icon(Icons.rate_review, size: 16),
                   label: const Text('Reseñar'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(
-                      0xFFFF9800,
-                    ), // Naranja para reseña pendiente
+                    backgroundColor: const Color(0xFFFF9800),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -483,17 +517,31 @@ class _ReservaCardViajeroState extends State<ReservaCardViajero> {
   }
 
   void _escribirResena(BuildContext context) {
-    // TODO: Implementar navegación al formulario de reseña
-    Navigator.pushNamed(
+    // Crear objeto Reserva desde ReservaChatInfo para la pantalla de reseña
+    final reservaParaResena = Reserva(
+      id: reserva.id,
+      propiedadId: reserva.propiedadId,
+      viajeroId: reserva.viajeroId,
+      fechaInicio: reserva.fechaInicio,
+      fechaFin: reserva.fechaFin,
+      estado: reserva.estado,
+      createdAt: reserva.createdAt,
+      updatedAt: reserva.updatedAt,
+      codigoVerificacion: reserva.codigoVerificacion,
+      tituloPropiedad: reserva.tituloPropiedad,
+      fotoPrincipalPropiedad: reserva.fotoPrincipalPropiedad,
+      nombreViajero: reserva.nombreViajero,
+      fotoViajero: reserva.fotoViajero,
+      nombreAnfitrion: reserva.nombreAnfitrion,
+      fotoAnfitrion: reserva.fotoAnfitrion,
+      anfitrionId: reserva.anfitrionId,
+    );
+
+    Navigator.push(
       context,
-      '/escribir-resena',
-      arguments: {
-        'reservaId': reserva.id,
-        'propiedadId': reserva.propiedadId,
-        'anfitrionId': reserva.anfitrionId,
-        'nombrePropiedad': reserva.tituloPropiedad,
-        'nombreAnfitrion': reserva.nombreAnfitrion,
-      },
+      MaterialPageRoute(
+        builder: (context) => CrearResenaScreen(reserva: reservaParaResena),
+      ),
     ).then((resultado) {
       // Si se creó la reseña exitosamente, actualizar el estado
       if (resultado == true && onResenaCreada != null) {

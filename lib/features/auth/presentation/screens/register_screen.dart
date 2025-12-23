@@ -161,150 +161,164 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF263238)),
-          onPressed: () => Navigator.of(context).pop(),
+    return Theme(
+      // Forzar tema claro para las pantallas de autenticación
+      data: ThemeData.light().copyWith(
+        scaffoldBackgroundColor: Colors.white,
+        primaryColor: const Color(0xFF4DB6AC),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          iconTheme: IconThemeData(color: Color(0xFF263238)),
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Título
-              const Text(
-                'Crear Cuenta',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF263238),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Color(0xFF263238)),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Título
+                const Text(
+                  'Crear Cuenta',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF263238),
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-              // Foto de perfil
-              Center(
-                child: ProfilePhotoPicker(
-                  imageFile: _profilePhoto,
-                  onImageSelected: (file) {
-                    setState(() => _profilePhoto = file);
+                // Foto de perfil
+                Center(
+                  child: ProfilePhotoPicker(
+                    imageFile: _profilePhoto,
+                    onImageSelected: (file) {
+                      setState(() => _profilePhoto = file);
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Campo de nombre
+                CustomTextField(
+                  controller: _nombreController,
+                  hintText: 'Nombre',
+                  prefixIcon: Icons.person_outline,
+                  errorText: _nombreError,
+                  onChanged: (_) {
+                    if (_nombreError != null) {
+                      setState(() => _nombreError = null);
+                    }
                   },
                 ),
-              ),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
-              // Campo de nombre
-              CustomTextField(
-                controller: _nombreController,
-                hintText: 'Nombre',
-                prefixIcon: Icons.person_outline,
-                errorText: _nombreError,
-                onChanged: (_) {
-                  if (_nombreError != null) {
-                    setState(() => _nombreError = null);
-                  }
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              // Campo de teléfono
-              CustomTextField(
-                controller: _telefonoController,
-                hintText: 'Teléfono',
-                prefixIcon: Icons.phone_outlined,
-                keyboardType: TextInputType.phone,
-                errorText: _telefonoError,
-                onChanged: (_) {
-                  if (_telefonoError != null) {
-                    setState(() => _telefonoError = null);
-                  }
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              // Campo de email
-              CustomTextField(
-                controller: _emailController,
-                hintText: 'Email',
-                prefixIcon: Icons.email_outlined,
-                keyboardType: TextInputType.emailAddress,
-                errorText: _emailError,
-                onChanged: (_) {
-                  if (_emailError != null) {
-                    setState(() => _emailError = null);
-                  }
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              // Campo de contraseña
-              CustomTextField(
-                controller: _passwordController,
-                hintText: 'Contraseña',
-                prefixIcon: Icons.lock_outline,
-                obscureText: true,
-                errorText: _passwordError,
-                onChanged: (_) {
-                  if (_passwordError != null) {
-                    setState(() => _passwordError = null);
-                  }
-                },
-              ),
-
-              const SizedBox(height: 24),
-
-              // Botón de subir cédula
-              OutlinedButton.icon(
-                onPressed: _pickIdDocument,
-                icon: Icon(
-                  _idDocument != null ? Icons.check_circle : Icons.upload_file,
-                  color: _idDocument != null
-                      ? Colors.green
-                      : const Color(0xFF4DB6AC),
+                // Campo de teléfono
+                CustomTextField(
+                  controller: _telefonoController,
+                  hintText: 'Teléfono',
+                  prefixIcon: Icons.phone_outlined,
+                  keyboardType: TextInputType.phone,
+                  errorText: _telefonoError,
+                  onChanged: (_) {
+                    if (_telefonoError != null) {
+                      setState(() => _telefonoError = null);
+                    }
+                  },
                 ),
-                label: Text(
-                  _idDocument != null ? 'Cédula cargada' : 'Subir Cédula',
-                  style: TextStyle(
+
+                const SizedBox(height: 16),
+
+                // Campo de email
+                CustomTextField(
+                  controller: _emailController,
+                  hintText: 'Email',
+                  prefixIcon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
+                  errorText: _emailError,
+                  onChanged: (_) {
+                    if (_emailError != null) {
+                      setState(() => _emailError = null);
+                    }
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                // Campo de contraseña
+                CustomTextField(
+                  controller: _passwordController,
+                  hintText: 'Contraseña',
+                  prefixIcon: Icons.lock_outline,
+                  obscureText: true,
+                  errorText: _passwordError,
+                  onChanged: (_) {
+                    if (_passwordError != null) {
+                      setState(() => _passwordError = null);
+                    }
+                  },
+                ),
+
+                const SizedBox(height: 24),
+
+                // Botón de subir cédula
+                OutlinedButton.icon(
+                  onPressed: _pickIdDocument,
+                  icon: Icon(
+                    _idDocument != null
+                        ? Icons.check_circle
+                        : Icons.upload_file,
                     color: _idDocument != null
                         ? Colors.green
                         : const Color(0xFF4DB6AC),
-                    fontWeight: FontWeight.w600,
+                  ),
+                  label: Text(
+                    _idDocument != null ? 'Cédula cargada' : 'Subir Cédula',
+                    style: TextStyle(
+                      color: _idDocument != null
+                          ? Colors.green
+                          : const Color(0xFF4DB6AC),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: BorderSide(
+                      color: _idDocument != null
+                          ? Colors.green
+                          : const Color(0xFF4DB6AC),
+                      width: 2,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  side: BorderSide(
-                    color: _idDocument != null
-                        ? Colors.green
-                        : const Color(0xFF4DB6AC),
-                    width: 2,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+
+                const SizedBox(height: 32),
+
+                // Botón de registro
+                CustomButton(
+                  text: 'CREAR CUENTA',
+                  onPressed: _handleRegister,
+                  isLoading: _isLoading,
                 ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // Botón de registro
-              CustomButton(
-                text: 'CREAR CUENTA',
-                onPressed: _handleRegister,
-                isLoading: _isLoading,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

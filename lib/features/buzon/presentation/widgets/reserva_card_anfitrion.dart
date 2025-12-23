@@ -123,7 +123,10 @@ class _ReservaCardAnfitrionState extends State<ReservaCardAnfitrion> {
                   const SizedBox(width: 4),
                   Text(
                     '5.0', // TODO: Agregar calificación a modelo
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF424242), // NEGRO FIJO como en Mis Viajes
+                    ),
                   ),
                 ],
               ),
@@ -186,7 +189,10 @@ class _ReservaCardAnfitrionState extends State<ReservaCardAnfitrion> {
                 const SizedBox(height: 2),
                 Text(
                   'Ciudad', // TODO: Agregar ciudad a modelo
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF424242), // NEGRO FIJO como en Mis Viajes
+                  ),
                 ),
               ],
             ),
@@ -224,6 +230,9 @@ class _ReservaCardAnfitrionState extends State<ReservaCardAnfitrion> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
+                            color: Color(
+                              0xFF424242,
+                            ), // NEGRO FIJO como en Mis Viajes
                           ),
                         ),
                       ],
@@ -231,7 +240,12 @@ class _ReservaCardAnfitrionState extends State<ReservaCardAnfitrion> {
                     const SizedBox(height: 2),
                     Text(
                       formatoFecha.format(reserva.fechaInicio),
-                      style: const TextStyle(fontSize: 14),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(
+                          0xFF424242,
+                        ), // NEGRO FIJO como en Mis Viajes
+                      ),
                     ),
                   ],
                 ),
@@ -249,6 +263,9 @@ class _ReservaCardAnfitrionState extends State<ReservaCardAnfitrion> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
+                            color: Color(
+                              0xFF424242,
+                            ), // NEGRO FIJO como en Mis Viajes
                           ),
                         ),
                       ],
@@ -256,7 +273,12 @@ class _ReservaCardAnfitrionState extends State<ReservaCardAnfitrion> {
                     const SizedBox(height: 2),
                     Text(
                       formatoFecha.format(reserva.fechaFin),
-                      style: const TextStyle(fontSize: 14),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(
+                          0xFF424242,
+                        ), // NEGRO FIJO como en Mis Viajes
+                      ),
                     ),
                   ],
                 ),
@@ -276,6 +298,7 @@ class _ReservaCardAnfitrionState extends State<ReservaCardAnfitrion> {
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
+                  color: Color(0xFF424242), // NEGRO FIJO como en Mis Viajes
                 ),
               ),
               const Spacer(),
@@ -293,7 +316,10 @@ class _ReservaCardAnfitrionState extends State<ReservaCardAnfitrion> {
               if (!esVigente)
                 Text(
                   _calcularTiempoTranscurrido(),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF424242), // NEGRO FIJO como en Mis Viajes
+                  ),
                 ),
             ],
           ),

@@ -292,7 +292,9 @@ class _FiltrosChatDialogState extends State<FiltrosChatDialog> {
           children: [
             Text(
               etiqueta,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontSize: 12),
             ),
             const SizedBox(height: 4),
             Text(
@@ -301,7 +303,11 @@ class _FiltrosChatDialogState extends State<FiltrosChatDialog> {
                   : 'Seleccionar',
               style: TextStyle(
                 fontSize: 14,
-                color: fecha != null ? Colors.black : Colors.grey[500],
+                color: fecha != null
+                    ? (Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white.withOpacity(0.87)
+                          : Colors.black)
+                    : Colors.grey[500],
               ),
             ),
           ],
@@ -410,7 +416,11 @@ class _FiltrosChatDialogState extends State<FiltrosChatDialog> {
             Text(
               titulo,
               style: TextStyle(
-                color: seleccionado ? _colorPrincipal : Colors.black87,
+                color: seleccionado
+                    ? _colorPrincipal
+                    : (Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white.withValues(alpha: 0.87)
+                          : Colors.black87),
                 fontWeight: seleccionado ? FontWeight.w500 : FontWeight.normal,
               ),
             ),
@@ -512,7 +522,11 @@ class _FiltrosChatDialogState extends State<FiltrosChatDialog> {
             Text(
               titulo,
               style: TextStyle(
-                color: seleccionado ? _colorPrincipal : Colors.black87,
+                color: seleccionado
+                    ? _colorPrincipal
+                    : (Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white.withValues(alpha: 0.87)
+                          : Colors.black87),
                 fontWeight: seleccionado ? FontWeight.w500 : FontWeight.normal,
               ),
             ),
@@ -554,7 +568,9 @@ class _FiltrosChatDialogState extends State<FiltrosChatDialog> {
             numeroFiltros > 0
                 ? '$numeroFiltros ${numeroFiltros == 1 ? 'filtro activo' : 'filtros activos'}'
                 : 'Sin filtros aplicados',
-            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontSize: 14),
           ),
         ],
       ),

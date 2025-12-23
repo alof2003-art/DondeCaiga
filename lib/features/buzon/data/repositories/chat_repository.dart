@@ -26,10 +26,10 @@ class ChatRepository {
           )
         ''')
         .eq('viajero_id', userId)
-        .eq('estado', 'confirmada')
+        .eq('estado', 'confirmada') // ✅ Solo reservas confirmadas
         .gte('fecha_fin', ahoraStr)
         .order('fecha_inicio', ascending: true)
-        .limit(50); // Limitar resultados para mejor rendimiento
+        .limit(50);
 
     return await _convertirAReservaChatInfo(response as List, userId);
   }
@@ -53,7 +53,10 @@ class ChatRepository {
           )
         ''')
         .eq('viajero_id', userId)
-        .eq('estado', 'completada')
+        .inFilter('estado', [
+          'completada',
+          'confirmada',
+        ]) // ✅ Incluir confirmadas que ya pasaron
         .lt('fecha_fin', ahoraStr)
         .order('fecha_fin', ascending: false);
 
@@ -89,7 +92,7 @@ class ChatRepository {
           users_profiles!reservas_viajero_id_fkey(nombre, foto_perfil_url)
         ''')
         .inFilter('propiedad_id', propiedadIds)
-        .eq('estado', 'confirmada')
+        .eq('estado', 'confirmada') // ✅ Solo reservas confirmadas
         .gte('fecha_fin', ahoraStr)
         .order('fecha_inicio', ascending: true);
 
@@ -106,7 +109,7 @@ class ChatRepository {
     // Primero obtener las propiedades del usuario
     final propiedadesResponse = await _supabase
         .from('propiedades')
-        .select('id')
+        .select('id, titulo')
         .eq('anfitrion_id', userId);
 
     final propiedadIds = (propiedadesResponse as List)
@@ -125,7 +128,10 @@ class ChatRepository {
           users_profiles!reservas_viajero_id_fkey(nombre, foto_perfil_url)
         ''')
         .inFilter('propiedad_id', propiedadIds)
-        .eq('estado', 'completada')
+        .inFilter('estado', [
+          'completada',
+          'confirmada',
+        ]) // ✅ Incluir confirmadas que ya pasaron
         .lt('fecha_fin', ahoraStr)
         .order('fecha_fin', ascending: false);
 
@@ -283,14 +289,16 @@ class ChatRepository {
         return false;
       }
 
-      // Verificar que la reserva esté completada
-      if (reservaResponse['estado'] != 'completada') {
-        return false;
-      }
-
-      // Verificar que la fecha de fin haya pasado
+      // Verificar que la reserva esté completada O confirmada pero ya haya pasado su fecha de fin
+      final estado = reservaResponse['estado'] as String;
       final fechaFin = DateTime.parse(reservaResponse['fecha_fin'] as String);
-      if (fechaFin.isAfter(DateTime.now())) {
+      final ahora = DateTime.now();
+
+      final esResenableState =
+          estado == 'completada' ||
+          (estado == 'confirmada' && fechaFin.isBefore(ahora));
+
+      if (!esResenableState) {
         return false;
       }
 

@@ -83,14 +83,14 @@ class _AnfitrionScreenState extends State<AnfitrionScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.home_work, size: 100, color: Colors.grey[400]),
+            Icon(Icons.home_work, size: 100, color: const Color(0xFF757575)),
             const SizedBox(height: 24),
             Text(
               '¿Quieres ser Anfitrión?',
-              style: TextStyle(
-                fontSize: 28,
+              style: const TextStyle(
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
+                color: Color(0xFF424242),
               ),
               textAlign: TextAlign.center,
             ),
@@ -98,7 +98,7 @@ class _AnfitrionScreenState extends State<AnfitrionScreen> {
             Text(
               'Comparte tu espacio y ofrece alojamiento gratuito a viajeros de todo el mundo',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              style: const TextStyle(fontSize: 16, color: Color(0xFF424242)),
             ),
             const SizedBox(height: 40),
             ElevatedButton.icon(
@@ -220,10 +220,8 @@ class _MisPropiedadesViewState extends State<_MisPropiedadesView> {
             children: [
               Text(
                 'Mis Alojamientos',
-                style: TextStyle(
-                  fontSize: 24,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
                 ),
               ),
               ElevatedButton.icon(
@@ -257,17 +255,23 @@ class _MisPropiedadesViewState extends State<_MisPropiedadesView> {
                       Icon(
                         Icons.home_outlined,
                         size: 80,
-                        color: Colors.grey[400],
+                        color: const Color(0xFF757575),
                       ),
                       const SizedBox(height: 16),
                       Text(
                         'No tienes alojamientos',
-                        style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          color: Color(0xFF424242),
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Crea tu primer alojamiento',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF424242),
+                        ),
                       ),
                     ],
                   ),
@@ -276,6 +280,8 @@ class _MisPropiedadesViewState extends State<_MisPropiedadesView> {
                   onRefresh: _cargarPropiedades,
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
+                    physics: const BouncingScrollPhysics(), // Física más suave
+                    cacheExtent: 200, // Cache para mejor rendimiento
                     itemCount: _propiedades.length,
                     itemBuilder: (context, index) {
                       final propiedad = _propiedades[index];
@@ -342,16 +348,17 @@ class _MisPropiedadesViewState extends State<_MisPropiedadesView> {
                                       if (propiedad.ciudad != null)
                                         Text(
                                           propiedad.ciudad!,
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            color: Color(0xFF424242),
                                           ),
                                         ),
                                       const SizedBox(height: 4),
                                       Text(
                                         '${propiedad.capacidadPersonas} personas',
-                                        style: TextStyle(
-                                          color: Colors.grey[600],
+                                        style: const TextStyle(
                                           fontSize: 12,
+                                          color: Color(0xFF424242),
                                         ),
                                       ),
                                     ],
@@ -367,12 +374,12 @@ class _MisPropiedadesViewState extends State<_MisPropiedadesView> {
                                       backgroundColor:
                                           propiedad.estado == 'activo'
                                           ? Colors.green[100]
-                                          : Colors.grey[300],
+                                          : const Color(0xFFE0E0E0),
                                     ),
                                     const SizedBox(height: 4),
                                     Icon(
                                       Icons.edit,
-                                      color: Colors.grey[600],
+                                      color: const Color(0xFF757575),
                                       size: 20,
                                     ),
                                   ],

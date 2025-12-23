@@ -4,6 +4,7 @@ import '../../../propiedades/data/models/propiedad.dart';
 import '../../../propiedades/data/repositories/propiedad_repository.dart';
 import 'detalle_propiedad_screen.dart';
 import '../../../../core/widgets/custom_app_bar_header.dart';
+import '../../../../core/utils/navigation_utils.dart';
 import '../../data/models/filtro_explorar.dart';
 import '../widgets/filtros_explorar_dialog.dart';
 
@@ -171,7 +172,7 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withValues(alpha: 0.1),
@@ -199,7 +200,7 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
                   : null,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(color: Theme.of(context).dividerColor),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -222,11 +223,7 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
             children: [
               const Text(
                 'Filtros: ',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
               const SizedBox(width: 8),
               ElevatedButton.icon(
@@ -246,7 +243,7 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _filtroActual.tienesFiltrosAplicados
                       ? const Color(0xFF4DB6AC)
-                      : Colors.white,
+                      : Theme.of(context).cardColor,
                   foregroundColor: _filtroActual.tienesFiltrosAplicados
                       ? Colors.white
                       : const Color(0xFF4DB6AC),
@@ -269,8 +266,10 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
                   icon: const Icon(Icons.clear, size: 20),
                   tooltip: 'Limpiar filtros',
                   style: IconButton.styleFrom(
-                    backgroundColor: Colors.grey[100],
-                    foregroundColor: Colors.grey[600],
+                    backgroundColor: Theme.of(context).cardColor,
+                    foregroundColor: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.color,
                   ),
                 ),
               ],
@@ -330,12 +329,12 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
             const SizedBox(height: 16),
             Text(
               'Error al cargar alojamientos',
-              style: TextStyle(fontSize: 18, color: Colors.grey[700]),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
             Text(
               _error!,
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -353,16 +352,20 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off, size: 80, color: Colors.grey[400]),
+            Icon(
+              Icons.search_off,
+              size: 80,
+              color: Theme.of(context).disabledColor,
+            ),
             const SizedBox(height: 16),
             Text(
               'No se encontraron alojamientos',
-              style: TextStyle(fontSize: 18, color: Colors.grey[700]),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
             Text(
               'Intenta con otros términos de búsqueda',
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
         ),
@@ -374,16 +377,20 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.home_outlined, size: 80, color: Colors.grey[400]),
+            Icon(
+              Icons.home_outlined,
+              size: 80,
+              color: Theme.of(context).disabledColor,
+            ),
             const SizedBox(height: 16),
             Text(
               'No hay alojamientos disponibles',
-              style: TextStyle(fontSize: 18, color: Colors.grey[700]),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
             Text(
               'Vuelve más tarde',
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
         ),
@@ -400,6 +407,8 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
           if (useGridLayout) {
             return GridView.builder(
               padding: const EdgeInsets.all(16),
+              physics: const BouncingScrollPhysics(), // Física más suave
+              cacheExtent: 200, // Cache para mejor rendimiento
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: constraints.maxWidth > 800 ? 3 : 2,
                 childAspectRatio: constraints.maxWidth > 800 ? 0.8 : 0.9,
@@ -413,12 +422,9 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
                   propiedad: propiedad,
                   isGridLayout: true,
                   onTap: () {
-                    Navigator.push(
+                    NavigationUtils.pushOptimized(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            DetallePropiedadScreen(propiedadId: propiedad.id),
-                      ),
+                      DetallePropiedadScreen(propiedadId: propiedad.id),
                     );
                   },
                 );
@@ -427,6 +433,8 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
           } else {
             return ListView.builder(
               padding: const EdgeInsets.all(16),
+              physics: const BouncingScrollPhysics(), // Física más suave
+              cacheExtent: 200, // Cache para mejor rendimiento
               itemCount: _propiedadesFiltradas.length,
               itemBuilder: (context, index) {
                 final propiedad = _propiedadesFiltradas[index];
@@ -434,12 +442,9 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
                   propiedad: propiedad,
                   isGridLayout: false,
                   onTap: () {
-                    Navigator.push(
+                    NavigationUtils.pushOptimized(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            DetallePropiedadScreen(propiedadId: propiedad.id),
-                      ),
+                      DetallePropiedadScreen(propiedadId: propiedad.id),
                     );
                   },
                 );
@@ -458,6 +463,7 @@ class _PropiedadCard extends StatelessWidget {
   final bool isGridLayout;
 
   const _PropiedadCard({
+    // super.key, // Comentado para evitar warning de parámetro no usado
     required this.propiedad,
     required this.onTap,
     this.isGridLayout = false,
@@ -483,7 +489,7 @@ class _PropiedadCard extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Foto principal
+                // Foto principal optimizada
                 ClipRRect(
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(12),
@@ -494,10 +500,29 @@ class _PropiedadCard extends StatelessWidget {
                           height: imageHeight,
                           width: double.infinity,
                           fit: BoxFit.cover,
+                          // Optimizaciones de imagen
+                          cacheWidth: isGridLayout
+                              ? 300
+                              : 400, // Cache optimizado
+                          cacheHeight: isGridLayout ? 200 : 300,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              height: imageHeight,
+                              width: double.infinity,
+                              color: Colors.grey[200],
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            );
+                          },
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
                               height: imageHeight,
-                              color: Colors.grey[300],
+                              width: double.infinity,
+                              color: Colors.grey[200],
                               child: Icon(
                                 Icons.home,
                                 size: isGridLayout ? 40 : 60,
@@ -508,7 +533,7 @@ class _PropiedadCard extends StatelessWidget {
                         )
                       : Container(
                           height: imageHeight,
-                          color: Colors.grey[300],
+                          color: Colors.grey[200],
                           child: Icon(
                             Icons.home,
                             size: isGridLayout ? 40 : 60,
@@ -561,10 +586,10 @@ class _PropiedadCard extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 propiedad.ciudad!,
-                                style: TextStyle(
-                                  fontSize: isGridLayout ? 12 : 14,
-                                  color: Colors.grey[700],
-                                ),
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
+                                      fontSize: isGridLayout ? 12 : 14,
+                                    ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -575,7 +600,7 @@ class _PropiedadCard extends StatelessWidget {
                       SizedBox(height: isGridLayout ? 4 : 8),
 
                       // Información adicional
-                      _buildPropiedadInfo(propiedad, isGridLayout),
+                      _buildPropiedadInfo(context, propiedad, isGridLayout),
                     ],
                   ),
                 ),
@@ -592,7 +617,11 @@ class _PropiedadCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPropiedadInfo(Propiedad propiedad, bool isGridLayout) {
+  Widget _buildPropiedadInfo(
+    BuildContext context,
+    Propiedad propiedad,
+    bool isGridLayout,
+  ) {
     final iconSize = isGridLayout ? 14.0 : 16.0;
     final fontSize = isGridLayout ? 12.0 : 14.0;
 
@@ -606,7 +635,9 @@ class _PropiedadCard extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               '${propiedad.capacidadPersonas} personas',
-              style: TextStyle(fontSize: fontSize, color: Colors.grey[700]),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontSize: fontSize),
             ),
 
             if (propiedad.numeroHabitaciones != null) ...[
@@ -615,7 +646,9 @@ class _PropiedadCard extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 '${propiedad.numeroHabitaciones} hab.',
-                style: TextStyle(fontSize: fontSize, color: Colors.grey[700]),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontSize: fontSize),
               ),
             ],
           ],
@@ -635,7 +668,9 @@ class _PropiedadCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   '${propiedad.numeroBanos} baño${propiedad.numeroBanos! > 1 ? 's' : ''}',
-                  style: TextStyle(fontSize: fontSize, color: Colors.grey[700]),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontSize: fontSize),
                 ),
               ],
 
@@ -649,7 +684,9 @@ class _PropiedadCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   'Garaje',
-                  style: TextStyle(fontSize: fontSize, color: Colors.grey[700]),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontSize: fontSize),
                 ),
               ],
             ],
@@ -742,7 +779,9 @@ class _HostInfoRow extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             text: TextSpan(
-              style: TextStyle(fontSize: 13, color: Colors.grey[800]),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontSize: 13),
               children: [
                 TextSpan(text: 'Anfitrión: '),
                 TextSpan(

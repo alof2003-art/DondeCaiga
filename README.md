@@ -1,306 +1,219 @@
-# 🏠 Donde Caiga
+# 🏠 DondeCaiga - Plataforma de Alojamientos
 
-Aplicación móvil de alojamiento que conecta viajeros con anfitriones, desarrollada con Flutter y Supabase.
+[![Flutter](https://img.shields.io/badge/Flutter-3.0+-blue.svg)](https://flutter.dev/)
+[![Supabase](https://img.shields.io/badge/Supabase-Backend-green.svg)](https://supabase.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-![Flutter](https://img.shields.io/badge/Flutter-3.0+-blue.svg)
-![Dart](https://img.shields.io/badge/Dart-3.0+-blue.svg)
-![Supabase](https://img.shields.io/badge/Supabase-Backend-green.svg)
-![Estado](https://img.shields.io/badge/Estado-Producción-success.svg)
+Una aplicación móvil desarrollada en Flutter que conecta viajeros con anfitriones para alojamientos temporales. Incluye sistema completo de autenticación, reservas, chat, reseñas y administración.
 
----
-
-## 📋 Descripción
-
-**Donde Caiga** es una plataforma móvil que permite a los viajeros encontrar alojamiento y a los anfitriones ofrecer sus propiedades. Similar a Airbnb, incluye funcionalidades completas de gestión de reservas, chat en tiempo real, y sistema de verificación.
-
-### ✨ Características Principales
+## ✨ Características Principales
 
 - 🔐 **Autenticación completa** con Supabase Auth
-- 🏡 **Gestión de propiedades** con múltiples fotos
-- 📅 **Sistema de reservas** con calendario
-- 💬 **Chat en tiempo real** entre viajeros y anfitriones
-- 🔢 **Códigos de verificación** automáticos para check-in
-- 👥 **Sistema de roles** (Viajero, Anfitrión, Admin)
-- 📱 **Solicitudes de anfitrión** con aprobación por admin
-- 🔒 **Seguridad con RLS** (Row Level Security)
+- 🏠 **Exploración de propiedades** con búsqueda avanzada
+- 📅 **Sistema de reservas** con calendario interactivo
+- 💬 **Chat integrado** con filtros inteligentes
+- ⭐ **Sistema de reseñas** y calificaciones
+- 👑 **Panel de administración** completo
+- 🌙 **Modo oscuro** y configuraciones personalizables
+- � **Diseeño responsivo** para todos los dispositivos
 
----
-
-## 🚀 Inicio Rápido
+## � Inicio aRápido
 
 ### Prerrequisitos
 
-- Flutter 3.0 o superior
-- Dart 3.0 o superior
+- Flutter SDK 3.0+
+- Dart 3.0+
 - Cuenta de Supabase
-- Android Studio / VS Code
+- Google Places API Key (opcional)
 
 ### Instalación
 
 1. **Clonar el repositorio**
-```bash
-git clone https://github.com/tu-usuario/donde_caigav2.git
-cd donde_caigav2
-```
+   ```bash
+   git clone https://github.com/alof2003-art/DondeCaiga.git
+   cd DondeCaiga
+   ```
 
 2. **Instalar dependencias**
-```bash
-flutter pub get
-```
+   ```bash
+   flutter pub get
+   ```
 
-3. **Configurar Supabase**
-   - Crear proyecto en [Supabase](https://supabase.com)
-   - Ejecutar `BASE_DATOS_COMPLETA_FINAL.sql` en el SQL Editor
-   - Crear archivo `.env` con tus credenciales:
-```env
-SUPABASE_URL=tu_url_de_supabase
-SUPABASE_ANON_KEY=tu_anon_key
-```
+3. **Configurar variables de entorno**
+   ```bash
+   cp .env.example .env
+   # Editar .env con tus credenciales de Supabase
+   ```
 
-4. **Ejecutar la aplicación**
-```bash
-flutter run
-```
+4. **Configurar Supabase**
+   - Ejecutar el SQL en [`docs/SUPABASE_ESQUEMA_COMPLETO_FINAL.sql`](docs/SUPABASE_ESQUEMA_COMPLETO_FINAL.sql)
+   - Configurar Storage buckets
+   - Habilitar autenticación por email
 
----
+5. **Ejecutar la aplicación**
+   ```bash
+   flutter run
+   ```
 
-## 📚 Documentación
+## 📱 Capturas de Pantalla
 
-### 🌟 Documentos Principales
-
-| Documento | Descripción |
-|-----------|-------------|
-| **[INDICE_DOCUMENTACION.md](INDICE_DOCUMENTACION.md)** | Índice maestro de toda la documentación |
-| **[DOCUMENTACION_COMPLETA_PROYECTO.md](DOCUMENTACION_COMPLETA_PROYECTO.md)** | Documentación completa del proyecto |
-| **[BASE_DATOS_COMPLETA_FINAL.sql](BASE_DATOS_COMPLETA_FINAL.sql)** | Esquema completo de base de datos |
-| **[ESPECIFICACIONES_COMPLETAS.md](ESPECIFICACIONES_COMPLETAS.md)** | Especificaciones técnicas |
-
-### 📖 Documentación por Funcionalidad
-
-- **Chat**: [SISTEMA_CHAT_DOCUMENTACION_FINAL.md](SISTEMA_CHAT_DOCUMENTACION_FINAL.md)
-- **Reservas**: [SISTEMA_RESERVAS_COMPLETO.md](SISTEMA_RESERVAS_COMPLETO.md)
-- **Errores**: [ERRORES_Y_SOLUCIONES_SQL.sql](ERRORES_Y_SOLUCIONES_SQL.sql)
-
-### 🔍 Guías Rápidas
-
-- **Setup inicial**: Ver [DOCUMENTACION_COMPLETA_PROYECTO.md](DOCUMENTACION_COMPLETA_PROYECTO.md) → Sección "Setup Inicial"
-- **Probar reservas**: Ver [COMO_PROBAR_RESERVAS.md](COMO_PROBAR_RESERVAS.md)
-- **Verificar BD**: Ver [verificar_base_datos.md](verificar_base_datos.md)
-
----
+| Explorar | Chat | Perfil | Admin |
+|----------|------|--------|-------|
+| ![Explorar](assets/screenshots/explorar.png) | ![Chat](assets/screenshots/chat.png) | ![Perfil](assets/screenshots/perfil.png) | ![Admin](assets/screenshots/admin.png) |
 
 ## 🏗️ Arquitectura
 
-### Estructura del Proyecto
-
 ```
 lib/
-├── core/                    # Utilidades y configuración
-├── services/                # Servicios compartidos
-└── features/                # Funcionalidades por módulo
-    ├── auth/                # Autenticación
-    ├── explorar/            # Búsqueda de propiedades
-    ├── propiedades/         # Gestión de propiedades
-    ├── reservas/            # Sistema de reservas
-    ├── chat/                # Mensajería en tiempo real
-    ├── buzon/               # Lista de chats
-    ├── perfil/              # Perfil de usuario
-    └── anfitrion/           # Solicitudes de anfitrión
+├── core/                    # Funcionalidades centrales
+│   ├── config/             # Configuraciones
+│   ├── services/           # Servicios globales
+│   ├── theme/              # Temas y estilos
+│   └── widgets/            # Widgets reutilizables
+├── features/               # Características por módulos
+│   ├── auth/               # Autenticación
+│   ├── explorar/           # Búsqueda de propiedades
+│   ├── buzon/              # Sistema de chat
+│   ├── perfil/             # Gestión de perfil
+│   └── admin/              # Panel de administración
+└── services/               # Servicios auxiliares
 ```
 
-### Base de Datos
+## 🗄️ Base de Datos
 
-8 tablas principales:
-- `users_profiles` - Perfiles de usuario
-- `roles` - Roles del sistema
-- `propiedades` - Propiedades publicadas
-- `reservas` - Reservas de alojamiento
-- `mensajes` - Chat en tiempo real
-- `solicitudes_anfitrion` - Solicitudes para ser anfitrión
-- `fotos_propiedades` - Galería de fotos
-- `resenas` - Reseñas de propiedades
+### Tablas Principales
 
-Ver esquema completo en [BASE_DATOS_COMPLETA_FINAL.sql](BASE_DATOS_COMPLETA_FINAL.sql)
+- **users_profiles** - Perfiles de usuario
+- **propiedades** - Propiedades disponibles
+- **reservas** - Reservas realizadas
+- **resenas** - Reseñas y calificaciones
+- **mensajes** - Sistema de chat
+- **admin_audit_log** - Auditoría administrativa
 
----
+Ver esquema completo: [`docs/SUPABASE_ESQUEMA_COMPLETO_FINAL.sql`](docs/SUPABASE_ESQUEMA_COMPLETO_FINAL.sql)
 
-## 🔧 Tecnologías
+## 🎯 Funcionalidades
 
-### Frontend
-- **Flutter** - Framework de UI
-- **Dart** - Lenguaje de programación
-- **Material Design** - Sistema de diseño
+### Para Viajeros
+- ✅ Buscar y filtrar propiedades
+- ✅ Hacer reservas con calendario
+- ✅ Chat con anfitriones
+- ✅ Escribir reseñas
+- ✅ Gestionar perfil
 
-### Backend
-- **Supabase** - Backend as a Service
-- **PostgreSQL** - Base de datos
-- **Supabase Auth** - Autenticación
-- **Supabase Storage** - Almacenamiento de archivos
-- **Supabase Realtime** - Mensajería en tiempo real
+### Para Anfitriones
+- ✅ Publicar propiedades
+- ✅ Gestionar reservas
+- ✅ Chat con viajeros
+- ✅ Ver reseñas recibidas
 
-### Seguridad
-- **Row Level Security (RLS)** - Políticas de seguridad a nivel de fila
-- **JWT Tokens** - Autenticación segura
-- **Storage Policies** - Control de acceso a archivos
+### Para Administradores
+- ✅ Gestionar usuarios
+- ✅ Aprobar solicitudes de anfitrión
+- ✅ Moderar contenido
+- ✅ Auditoría completa
 
----
+## 🔧 Configuración
 
-## 👥 Roles de Usuario
+### Variables de Entorno (.env)
 
-### 🧳 Viajero (rol_id: 1)
-- Buscar propiedades
-- Crear reservas
-- Chat con anfitriones
-- Ver código de verificación
-- Solicitar ser anfitrión
+```env
+SUPABASE_URL=tu_supabase_url
+SUPABASE_ANON_KEY=tu_supabase_anon_key
+GOOGLE_PLACES_API_KEY=tu_google_places_key
+```
 
-### 🏠 Anfitrión (rol_id: 2)
-- Publicar propiedades
-- Gestionar reservas
-- Confirmar/rechazar solicitudes
-- Chat con viajeros
-- Ver código de verificación
+### Configuración de Supabase
 
-### 👨‍💼 Administrador (rol_id: 3)
-- Aprobar solicitudes de anfitrión
-- Acceso completo a todas las tablas
-- Gestión de usuarios
+1. Crear proyecto en Supabase
+2. Ejecutar SQL del esquema
+3. Configurar Storage buckets
+4. Habilitar autenticación
+5. Configurar RLS policies
 
----
+## 📚 Documentación
 
-## 📱 Funcionalidades Detalladas
+- 📋 [**Documentación Completa**](docs/DOCUMENTACION_PROYECTO_COMPLETA_FINAL.md)
+- 🗄️ [**Esquema de Base de Datos**](docs/SUPABASE_ESQUEMA_COMPLETO_FINAL.sql)
+- 🔍 [**Validación BD vs Código**](docs/VALIDACION_BASE_DATOS_FINAL.md)
+- 📚 [**Índice de Documentación**](docs/INDICE_DOCUMENTACION_FINAL.md)
 
-### 🔐 Autenticación
-- Registro con email y contraseña
-- Subida de foto de perfil
-- Subida de documento de identidad
-- Login persistente
-- Recuperación de contraseña
+## 🧪 Testing
 
-### 🏡 Propiedades
-- Crear/editar propiedades
-- Subir múltiples fotos
-- Información detallada (ubicación, capacidad, amenidades)
-- Activar/desactivar publicación
+```bash
+# Ejecutar tests
+flutter test
 
-### 📅 Reservas
-- Calendario de disponibilidad
-- Estados: pendiente, confirmada, rechazada, completada, cancelada
-- Código de verificación automático (6 dígitos)
-- Notificaciones de estado
+# Generar coverage
+flutter test --coverage
+```
 
-### 💬 Chat
-- Mensajes en tiempo real (Supabase Realtime)
-- Solo para reservas confirmadas
-- Código de verificación visible en header
-- Burbujas diferenciadas por remitente
-- Marca mensajes como leídos
+## 🚀 Deployment
 
----
+### Android
+```bash
+flutter build apk --release
+```
 
-## 🐛 Solución de Problemas
-
-### Errores Comunes
-
-**Error: No se puede conectar a Supabase**
-- Verificar credenciales en `.env`
-- Verificar que el proyecto de Supabase está activo
-
-**Error: No se pueden subir imágenes**
-- Verificar políticas de Storage
-- Ejecutar `storage_policies_final.sql`
-
-**Error: Mensajes no llegan en tiempo real**
-- Verificar que Realtime está habilitado en tabla `mensajes`
-- Verificar suscripción en código Flutter
-
-Ver más soluciones en [ERRORES_Y_SOLUCIONES_SQL.sql](ERRORES_Y_SOLUCIONES_SQL.sql)
-
----
-
-## 📊 Estado del Proyecto
-
-### ✅ Completado
-- Sistema de autenticación
-- Gestión de propiedades
-- Sistema de reservas
-- Chat en tiempo real
-- Códigos de verificación
-- Solicitudes de anfitrión
-- Panel de administración
-
-### 🚧 En Desarrollo
-- Sistema de reseñas (tabla creada, falta UI)
-- Notificaciones push
-- Búsqueda avanzada con filtros
-
-### 📋 Planeado
-- Sistema de pagos
-- Calendario de disponibilidad avanzado
-- Búsqueda por mapa
-- Sistema de favoritos
-
----
+### iOS
+```bash
+flutter build ios --release
+```
 
 ## 🤝 Contribuir
 
-### Para Nuevos Desarrolladores
+1. Fork el proyecto
+2. Crear una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abrir un Pull Request
 
-1. Lee [DOCUMENTACION_COMPLETA_PROYECTO.md](DOCUMENTACION_COMPLETA_PROYECTO.md)
-2. Revisa [INDICE_DOCUMENTACION.md](INDICE_DOCUMENTACION.md)
-3. Configura el entorno siguiendo la sección "Instalación"
-4. Revisa [ERRORES_Y_SOLUCIONES_SQL.sql](ERRORES_Y_SOLUCIONES_SQL.sql)
+## � Cuhangelog
 
-### Convenciones de Código
+### v1.0.0 (Diciembre 2024)
+- ✅ Sistema completo de autenticación
+- ✅ CRUD de propiedades con calificaciones
+- ✅ Sistema de reservas con validaciones
+- ✅ Chat con filtros inteligentes
+- ✅ Sistema de reseñas completo
+- ✅ Panel de administración
+- ✅ Modo oscuro y configuraciones
+- ✅ Diseño responsivo
 
-- **Dart**: Seguir [Effective Dart](https://dart.dev/guides/language/effective-dart)
-- **SQL**: Nombres en snake_case
-- **Commits**: Mensajes descriptivos en español
+## 🐛 Reportar Bugs
 
----
+Si encuentras un bug, por favor crea un [issue](https://github.com/alof2003-art/DondeCaiga/issues) con:
 
-## 📞 Contacto
-
-**Desarrollador Principal**: alof2003@gmail.com
-
----
+- Descripción del problema
+- Pasos para reproducir
+- Comportamiento esperado
+- Screenshots (si aplica)
+- Información del dispositivo
 
 ## 📄 Licencia
 
-Este proyecto es privado y confidencial.
+Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para detalles.
 
----
+## 👥 Equipo
 
-## 🙏 Agradecimientos
+- **Desarrollador Principal**: [alof2003-art](https://github.com/alof2003-art)
+
+## �  Agradecimientos
 
 - [Flutter](https://flutter.dev/) - Framework de desarrollo
 - [Supabase](https://supabase.com/) - Backend as a Service
-- [Material Design](https://material.io/) - Sistema de diseño
+- [Google Places API](https://developers.google.com/maps/documentation/places/web-service) - Búsqueda de direcciones
+
+## 📊 Estadísticas del Proyecto
+
+- **Líneas de código**: ~15,000+
+- **Pantallas**: 20+ pantallas principales
+- **Modelos de datos**: 8 modelos principales
+- **Servicios**: 10+ servicios
+- **Documentación**: 80+ archivos
 
 ---
 
-## 📝 Notas de Versión
+**Desarrollado con ❤️ usando Flutter y Supabase**
 
-### Versión 1.0.0 (2025-12-04)
-- ✅ Sistema completo de autenticación
-- ✅ Gestión de propiedades
-- ✅ Sistema de reservas con códigos de verificación
-- ✅ Chat en tiempo real
-- ✅ Solicitudes de anfitrión
-- ✅ Panel de administración
-- ✅ Documentación completa
-
----
-
-## 🔗 Enlaces Útiles
-
-- [Documentación de Flutter](https://flutter.dev/docs)
-- [Documentación de Supabase](https://supabase.com/docs)
-- [Documentación de Dart](https://dart.dev/guides)
-- [PostgreSQL Docs](https://www.postgresql.org/docs/)
-
----
-
-**Última Actualización**: 2025-12-04  
-**Versión**: 1.0.0  
-**Estado**: ✅ Producción
+*¿Te gusta el proyecto? ¡Dale una ⭐ en GitHub!*

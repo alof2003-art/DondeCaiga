@@ -199,23 +199,17 @@ class _ChatConversacionScreenState extends State<ChatConversacionScreen> {
                         Icon(
                           Icons.chat_bubble_outline,
                           size: 60,
-                          color: Colors.grey[400],
+                          color: Theme.of(context).colorScheme.outline,
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'No hay mensajes',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
-                          ),
+                          style: Theme.of(context).textTheme.bodyLarge,
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Envía el primer mensaje',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[500],
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ],
                     ),
@@ -223,6 +217,9 @@ class _ChatConversacionScreenState extends State<ChatConversacionScreen> {
                 : ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.all(16),
+                    physics: const BouncingScrollPhysics(), // Física más suave
+                    cacheExtent: 200, // Cache para mejor rendimiento
+                    reverse: true, // Mensajes más recientes abajo
                     itemCount: _mensajes.length,
                     itemBuilder: (context, index) {
                       final mensaje = _mensajes[index];

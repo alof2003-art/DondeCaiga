@@ -51,7 +51,7 @@ class ReservaChatInfo extends Reserva {
     final ahora = DateTime.now();
     final esReservaComoViajero = reserva.viajeroId == usuarioActualId;
 
-    // Determinar si la reserva está vigente
+    // Determinar si la reserva está vigente (solo confirmadas)
     final esVigente = reserva.esConfirmada && reserva.fechaFin.isAfter(ahora);
 
     // Calcular días restantes o tiempo transcurrido
@@ -66,8 +66,9 @@ class ReservaChatInfo extends Reserva {
         // Ya comenzó, calcular días hasta el fin
         diasRestantes = reserva.fechaFin.difference(ahora).inDays;
       }
-    } else if (reserva.esCompletada) {
-      // Calcular tiempo transcurrido desde que terminó
+    } else if (reserva.esCompletada ||
+        (reserva.esConfirmada && reserva.fechaFin.isBefore(ahora))) {
+      // Calcular tiempo transcurrido desde que terminó (para reservas completadas o confirmadas que ya pasaron)
       final diferencia = ahora.difference(reserva.fechaFin);
       tiempoTranscurrido = _formatearTiempoTranscurrido(diferencia);
     }
@@ -85,9 +86,14 @@ class ReservaChatInfo extends Reserva {
     }
 
     // Determinar si puede reseñar (solo viajeros pueden reseñar y solo después de completar)
+    // Una reserva se puede reseñar si está completada O si está confirmada pero ya pasó su fecha de fin
+    final esResenableState =
+        reserva.esCompletada ||
+        (reserva.esConfirmada && reserva.fechaFin.isBefore(ahora));
+
     final puedeResenarCalculado =
         esReservaComoViajero &&
-        reserva.esCompletada &&
+        esResenableState &&
         (puedeResenar ?? true) &&
         !(yaReseno ?? false);
 
@@ -139,7 +145,9 @@ class ReservaChatInfo extends Reserva {
 
   /// Obtiene el texto descriptivo del tiempo para mostrar en la UI
   String get textoTiempo {
-    if (esVigente && diasRestantes != null) {
+    if (esPendiente) {
+      return 'Pendiente de confirmación';
+    } else if (esVigente && diasRestantes != null) {
       if (fechaInicio.isAfter(DateTime.now())) {
         return diasRestantes! > 0
             ? 'Comienza en $diasRestantes día${diasRestantes! > 1 ? 's' : ''}'
@@ -158,7 +166,10 @@ class ReservaChatInfo extends Reserva {
   /// Obtiene el texto del estado de la reseña
   String get textoEstadoResena {
     if (!esReservaComoViajero) return '';
-    if (!esCompletada) return '';
+    final ahora = DateTime.now();
+    final esResenableState =
+        esCompletada || (esConfirmada && fechaFin.isBefore(ahora));
+    if (!esResenableState) return '';
     if (yaReseno) return 'Reseñado';
     if (puedeResenar) return 'Comparte tu experiencia';
     return '';
@@ -171,7 +182,13 @@ class ReservaChatInfo extends Reserva {
 
   /// Verifica si debe mostrar el indicador de reseña pendiente
   bool get tieneResenaPendiente {
-    return esReservaComoViajero && esCompletada && !yaReseno && puedeResenar;
+    final ahora = DateTime.now();
+    final esResenableState =
+        esCompletada || (esConfirmada && fechaFin.isBefore(ahora));
+    return esReservaComoViajero &&
+        esResenableState &&
+        !yaReseno &&
+        puedeResenar;
   }
 
   /// Obtiene el nombre para mostrar según el contexto

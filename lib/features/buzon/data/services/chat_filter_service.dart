@@ -153,18 +153,24 @@ class ChatFilterService {
     List<ReservaChatInfo> reservas,
     EstadoFiltro estado,
   ) {
+    List<ReservaChatInfo> resultado;
     switch (estado) {
       case EstadoFiltro.vigentes:
-        return reservas.where((reserva) => reserva.esVigente).toList();
+        resultado = reservas.where((reserva) => reserva.esVigente).toList();
+        break;
 
       case EstadoFiltro.pasadas:
-        return reservas.where((reserva) => !reserva.esVigente).toList();
+        resultado = reservas.where((reserva) => !reserva.esVigente).toList();
+        break;
 
       case EstadoFiltro.conResenasPendientes:
-        return reservas
+        resultado = reservas
             .where((reserva) => reserva.tieneResenaPendiente)
             .toList();
+        break;
     }
+
+    return resultado;
   }
 
   /// Filtrar reservas por rango de fechas

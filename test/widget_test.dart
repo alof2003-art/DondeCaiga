@@ -9,22 +9,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:donde_caigav2/main.dart';
+import 'package:donde_caigav2/core/services/theme_service.dart';
+import 'package:donde_caigav2/core/services/font_size_service.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('App loads correctly', (WidgetTester tester) async {
+    // Create services for test
+    final themeService = ThemeService();
+    final fontSizeService = FontSizeService();
+
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(
+      MyApp(themeService: themeService, fontSizeService: fontSizeService),
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify that the app loads
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

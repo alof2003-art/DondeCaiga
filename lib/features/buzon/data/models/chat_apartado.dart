@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../reservas/data/models/reserva.dart';
+import 'reserva_chat_info.dart';
 
 /// Enum que define los tipos de apartados disponibles en el chat
 enum TipoApartado { misViajes, misReservas }
@@ -12,8 +12,8 @@ class ChatApartado {
   final Color colorSecundario;
   final Color colorAcento;
   final IconData icono;
-  final List<Reserva> reservasVigentes;
-  final List<Reserva> reservasPasadas;
+  final List<ReservaChatInfo> reservasVigentes;
+  final List<ReservaChatInfo> reservasPasadas;
 
   const ChatApartado({
     required this.tipo,
@@ -28,8 +28,8 @@ class ChatApartado {
 
   /// Factory constructor para crear apartado "Mis Viajes"
   factory ChatApartado.misViajes({
-    required List<Reserva> reservasVigentes,
-    required List<Reserva> reservasPasadas,
+    required List<ReservaChatInfo> reservasVigentes,
+    required List<ReservaChatInfo> reservasPasadas,
   }) {
     return ChatApartado(
       tipo: TipoApartado.misViajes,
@@ -45,8 +45,8 @@ class ChatApartado {
 
   /// Factory constructor para crear apartado "Mis Reservas"
   factory ChatApartado.misReservas({
-    required List<Reserva> reservasVigentes,
-    required List<Reserva> reservasPasadas,
+    required List<ReservaChatInfo> reservasVigentes,
+    required List<ReservaChatInfo> reservasPasadas,
   }) {
     return ChatApartado(
       tipo: TipoApartado.misReservas,
@@ -83,8 +83,8 @@ class ChatApartado {
 
   /// Crea una copia del apartado con nuevos datos
   ChatApartado copyWith({
-    List<Reserva>? reservasVigentes,
-    List<Reserva>? reservasPasadas,
+    List<ReservaChatInfo>? reservasVigentes,
+    List<ReservaChatInfo>? reservasPasadas,
   }) {
     return ChatApartado(
       tipo: tipo,

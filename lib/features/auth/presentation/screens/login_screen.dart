@@ -103,109 +103,116 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 40),
+    return Theme(
+      // Forzar tema claro para las pantallas de autenticación
+      data: ThemeData.light().copyWith(
+        scaffoldBackgroundColor: Colors.white,
+        primaryColor: const Color(0xFF4DB6AC),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 40),
 
-              // Logo
-              Center(
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  width: 120,
-                  height: 120,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Bienvenido
-              const Center(
-                child: Text(
-                  'Bienvenido',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF4DB6AC),
+                // Logo
+                Center(
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    width: 120,
+                    height: 120,
                   ),
                 ),
-              ),
 
-              const SizedBox(height: 48),
+                const SizedBox(height: 16),
 
-              // Título
-              const Text(
-                'Iniciar Sesión',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF263238),
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // Campo de email
-              CustomTextField(
-                controller: _emailController,
-                hintText: 'Email',
-                prefixIcon: Icons.email_outlined,
-                keyboardType: TextInputType.emailAddress,
-                errorText: _emailError,
-                onChanged: (_) {
-                  if (_emailError != null) {
-                    setState(() => _emailError = null);
-                  }
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              // Campo de contraseña
-              CustomTextField(
-                controller: _passwordController,
-                hintText: 'Contraseña',
-                prefixIcon: Icons.lock_outline,
-                obscureText: true,
-                errorText: _passwordError,
-                onChanged: (_) {
-                  if (_passwordError != null) {
-                    setState(() => _passwordError = null);
-                  }
-                },
-              ),
-
-              const SizedBox(height: 32),
-
-              // Botón de login
-              CustomButton(
-                text: 'ENTRAR',
-                onPressed: _handleLogin,
-                isLoading: _isLoading,
-              ),
-
-              const SizedBox(height: 24),
-
-              // Link de registro
-              Center(
-                child: TextButton(
-                  onPressed: _navigateToRegister,
-                  child: const Text(
-                    '¿No tienes cuenta? Regístrate aquí',
+                // Bienvenido
+                const Center(
+                  child: Text(
+                    'Bienvenido',
                     style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
                       color: Color(0xFF4DB6AC),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 48),
+
+                // Título
+                const Text(
+                  'Iniciar Sesión',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF263238),
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Campo de email
+                CustomTextField(
+                  controller: _emailController,
+                  hintText: 'Email',
+                  prefixIcon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
+                  errorText: _emailError,
+                  onChanged: (_) {
+                    if (_emailError != null) {
+                      setState(() => _emailError = null);
+                    }
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                // Campo de contraseña
+                CustomTextField(
+                  controller: _passwordController,
+                  hintText: 'Contraseña',
+                  prefixIcon: Icons.lock_outline,
+                  obscureText: true,
+                  errorText: _passwordError,
+                  onChanged: (_) {
+                    if (_passwordError != null) {
+                      setState(() => _passwordError = null);
+                    }
+                  },
+                ),
+
+                const SizedBox(height: 32),
+
+                // Botón de login
+                CustomButton(
+                  text: 'ENTRAR',
+                  onPressed: _handleLogin,
+                  isLoading: _isLoading,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Link de registro
+                Center(
+                  child: TextButton(
+                    onPressed: _navigateToRegister,
+                    child: const Text(
+                      '¿No tienes cuenta? Regístrate aquí',
+                      style: TextStyle(
+                        color: Color(0xFF4DB6AC),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
