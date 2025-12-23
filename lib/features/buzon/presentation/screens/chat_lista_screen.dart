@@ -8,7 +8,6 @@ import '../../data/models/chat_apartado.dart';
 import '../../data/models/filtro_chat.dart';
 import '../../data/models/reserva_chat_info.dart';
 import '../../data/repositories/chat_repository.dart';
-import '../../data/services/chat_filter_service.dart';
 import '../../data/services/services.dart';
 
 class ChatListaScreen extends StatefulWidget {
@@ -96,16 +95,10 @@ class _ChatListaScreenState extends State<ChatListaScreen>
     setState(() => _isLoadingViajes = true);
 
     try {
-      print('🔍 Cargando Mis Viajes para usuario: $userId');
-
       final reservasVigentes = await _chatRepository
           .obtenerReservasViajeroVigentes(userId);
       final reservasPasadas = await _chatRepository
           .obtenerReservasViajeroPasadas(userId);
-
-      print(
-        '✈️ Mis Viajes RAW - Vigentes: ${reservasVigentes.length}, Pasadas: ${reservasPasadas.length}',
-      );
 
       // Aplicar filtros de manera inteligente según el tipo de filtro
       List<ReservaChatInfo> reservasVigentesFiltradas = [];
@@ -137,10 +130,6 @@ class _ChatListaScreenState extends State<ChatListaScreen>
         );
       }
 
-      print(
-        '✈️ Mis Viajes FILTRADAS - Vigentes: ${reservasVigentesFiltradas.length}, Pasadas: ${reservasPasadasFiltradas.length}',
-      );
-
       if (mounted) {
         setState(() {
           _apartadoMisViajes = ChatApartado.misViajes(
@@ -151,7 +140,6 @@ class _ChatListaScreenState extends State<ChatListaScreen>
         });
       }
     } catch (e) {
-      print('❌ Error cargando Mis Viajes: $e');
       if (mounted) {
         setState(() {
           _apartadoMisViajes = ChatApartado.misViajes(
@@ -168,16 +156,10 @@ class _ChatListaScreenState extends State<ChatListaScreen>
     setState(() => _isLoadingReservas = true);
 
     try {
-      print('🔍 Cargando Mis Reservas para usuario: $userId');
-
       final reservasVigentes = await _chatRepository
           .obtenerReservasAnfitrionVigentes(userId);
       final reservasPasadas = await _chatRepository
           .obtenerReservasAnfitrionPasadas(userId);
-
-      print(
-        '🏠 Mis Reservas RAW - Vigentes: ${reservasVigentes.length}, Pasadas: ${reservasPasadas.length}',
-      );
 
       // Aplicar filtros de manera inteligente según el tipo de filtro
       List<ReservaChatInfo> reservasVigentesFiltradas = [];
@@ -192,9 +174,6 @@ class _ChatListaScreenState extends State<ChatListaScreen>
         reservasPasadasFiltradas = []; // Vaciar pasadas
       } else if (_filtroReservas.estadoFiltro == EstadoFiltro.pasadas) {
         // Solo mostrar pasadas
-        print(
-          '🔧 FILTRO INTELIGENTE: Aplicando filtro SOLO a reservas pasadas',
-        );
         reservasVigentesFiltradas = []; // Vaciar vigentes
         reservasPasadasFiltradas = _filterService.aplicarFiltros(
           reservasPasadas,
@@ -212,10 +191,6 @@ class _ChatListaScreenState extends State<ChatListaScreen>
         );
       }
 
-      print(
-        '🏠 Mis Reservas FILTRADAS - Vigentes: ${reservasVigentesFiltradas.length}, Pasadas: ${reservasPasadasFiltradas.length}',
-      );
-
       if (mounted) {
         setState(() {
           _apartadoMisReservas = ChatApartado.misReservas(
@@ -226,7 +201,6 @@ class _ChatListaScreenState extends State<ChatListaScreen>
         });
       }
     } catch (e) {
-      print('❌ Error cargando Mis Reservas: $e');
       if (mounted) {
         setState(() {
           _apartadoMisReservas = ChatApartado.misReservas(
@@ -240,8 +214,6 @@ class _ChatListaScreenState extends State<ChatListaScreen>
   }
 
   Future<void> _aplicarFiltros(TipoApartado tipo, FiltroChat filtro) async {
-    print('🔧 Aplicando filtros para $tipo: ${filtro.descripcionFiltros}');
-
     // Guardar filtros
     await _persistenciaService.guardarFiltros(tipo, filtro);
 
