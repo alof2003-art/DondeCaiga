@@ -58,7 +58,11 @@ class _ChatConversacionScreenState extends State<ChatConversacionScreen> {
     _mensajeRepository.suscribirseAMensajes(widget.reserva.id, (nuevoMensaje) {
       if (mounted) {
         setState(() {
-          _mensajes.add(nuevoMensaje);
+          // Verificar que el mensaje no esté ya en la lista (evitar duplicados)
+          final yaExiste = _mensajes.any((m) => m.id == nuevoMensaje.id);
+          if (!yaExiste) {
+            _mensajes.add(nuevoMensaje); // Agregar al final (más nuevo)
+          }
         });
         _scrollToBottom();
       }
@@ -66,10 +70,10 @@ class _ChatConversacionScreenState extends State<ChatConversacionScreen> {
   }
 
   void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_scrollController.hasClients) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients && mounted) {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
+          _scrollController.position.maxScrollExtent, // Ir al final real
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
@@ -244,11 +248,12 @@ class _ChatConversacionScreenState extends State<ChatConversacionScreen> {
                 : ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.all(16),
-                    physics: const BouncingScrollPhysics(), // Física más suave
-                    cacheExtent: 200, // Cache para mejor rendimiento
-                    reverse: true, // Mensajes más recientes abajo
+                    physics: const BouncingScrollPhysics(),
+                    cacheExtent: 200,
+                    reverse: false, // Sin reverse, orden normal
                     itemCount: _mensajes.length,
                     itemBuilder: (context, index) {
+                      // Orden normal: mensajes más antiguos arriba, más nuevos abajo
                       final mensaje = _mensajes[index];
                       final esMio = mensaje.remitenteId == user?.id;
 
