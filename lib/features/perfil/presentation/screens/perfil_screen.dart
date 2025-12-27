@@ -11,6 +11,7 @@ import 'package:donde_caigav2/core/widgets/theme_toggle_button.dart';
 import 'package:donde_caigav2/core/services/theme_service.dart';
 import 'package:donde_caigav2/features/resenas/data/repositories/resenas_repository.dart';
 import 'package:donde_caigav2/features/resenas/presentation/widgets/seccion_resenas_perfil.dart';
+import 'package:donde_caigav2/features/perfil/presentation/widgets/calificaciones_perfil_widget.dart';
 import 'configurar_perfil_screen.dart';
 
 class PerfilScreen extends StatefulWidget {
@@ -30,6 +31,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
   int? _userRolId;
   String? _userId;
   bool _isLoading = true;
+  Map<String, dynamic> _estadisticasResenas = {};
 
   @override
   void initState() {
@@ -52,18 +54,26 @@ class _PerfilScreenState extends State<PerfilScreen> {
         final perfil = await _userRepository.getUserProfile(user.id);
 
         if (perfil != null && mounted) {
+          // Cargar estadísticas de reseñas
+          final estadisticas = await _resenasRepository
+              .getEstadisticasCompletasResenas(user.id);
+
+          // Debug: Imprimir estadísticas recibidas
+          print('=== DEBUG ESTADÍSTICAS PERFIL ===');
+          print('Estadísticas completas: $estadisticas');
+
           setState(() {
             _userId = user.id;
             _userEmail = perfil.email;
             _userName = perfil.nombre;
             _fotoPerfilUrl = perfil.fotoPerfilUrl;
             _userRolId = perfil.rolId;
+            _estadisticasResenas = estadisticas;
             _isLoading = false;
           });
         }
       }
     } catch (e) {
-      print('Error cargando perfil: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -170,6 +180,20 @@ class _PerfilScreenState extends State<PerfilScreen> {
                     color: Theme.of(context).textTheme.bodySmall?.color,
                   ),
                 ),
+
+                // Calificaciones del usuario
+                if (!_isLoading)
+                  CalificacionesPerfilWidget(
+                    promedioAnfitrion:
+                        _estadisticasResenas['promedioRecibidas'] as double?,
+                    totalResenasAnfitrion:
+                        _estadisticasResenas['totalResenasRecibidas'] as int?,
+                    promedioViajero:
+                        _estadisticasResenas['promedioComoViajero'] as double?,
+                    totalResenasViajero:
+                        _estadisticasResenas['totalResenasComoViajero'] as int?,
+                  ),
+
                 const SizedBox(height: 40),
 
                 // Botón de Admin (solo para rol_id = 3)
@@ -272,6 +296,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                   SeccionResenasPerfil(
                     userId: _userId!,
                     resenasRepository: _resenasRepository,
+                    esPerfilPropio: true,
                   ),
 
                 const SizedBox(height: 100), // Espacio para el botón flotante

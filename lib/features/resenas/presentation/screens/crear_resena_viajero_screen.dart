@@ -1,20 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../data/models/resena_viajero.dart';
 import '../../data/repositories/resenas_repository.dart';
-import '../../data/models/resena.dart';
-import '../../../reservas/data/models/reserva.dart';
 import '../../../../core/theme/app_theme.dart';
 
-class CrearResenaScreen extends StatefulWidget {
-  final Reserva reserva;
+class CrearResenaViajeroScreen extends StatefulWidget {
+  final String reservaId;
+  final String viajeroId;
+  final String nombreViajero;
+  final String? fotoViajero;
+  final String tituloPropiedad;
 
-  const CrearResenaScreen({super.key, required this.reserva});
+  const CrearResenaViajeroScreen({
+    super.key,
+    required this.reservaId,
+    required this.viajeroId,
+    required this.nombreViajero,
+    this.fotoViajero,
+    required this.tituloPropiedad,
+  });
 
   @override
-  State<CrearResenaScreen> createState() => _CrearResenaScreenState();
+  State<CrearResenaViajeroScreen> createState() =>
+      _CrearResenaViajeroScreenState();
 }
 
-class _CrearResenaScreenState extends State<CrearResenaScreen> {
+class _CrearResenaViajeroScreenState extends State<CrearResenaViajeroScreen> {
   final _formKey = GlobalKey<FormState>();
   final _comentarioController = TextEditingController();
   final _resenasRepository = ResenasRepository(Supabase.instance.client);
@@ -22,20 +33,20 @@ class _CrearResenaScreenState extends State<CrearResenaScreen> {
   double _calificacionGeneral = 5.0;
   final Map<String, int> _aspectos = {
     'limpieza': 5,
-    'ubicacion': 5,
-    'comodidad': 5,
-    'comunicacion_anfitrion': 5,
-    'relacion_calidad_precio': 5,
+    'comunicacion': 5,
+    'respeto_normas': 5,
+    'cuidado_propiedad': 5,
+    'puntualidad': 5,
   };
 
   bool _isLoading = false;
 
   final Map<String, String> _aspectosLegibles = {
     'limpieza': 'Limpieza',
-    'ubicacion': 'Ubicación',
-    'comodidad': 'Comodidad',
-    'comunicacion_anfitrion': 'Comunicación del anfitrión',
-    'relacion_calidad_precio': 'Relación calidad-precio',
+    'comunicacion': 'Comunicación',
+    'respeto_normas': 'Respeto a las normas',
+    'cuidado_propiedad': 'Cuidado de la propiedad',
+    'puntualidad': 'Puntualidad',
   };
 
   @override
@@ -74,27 +85,25 @@ class _CrearResenaScreenState extends State<CrearResenaScreen> {
         throw Exception('Usuario no autenticado');
       }
 
-      // Crear la reseña con aspectos
-      final resena = Resena(
+      final resena = ResenaViajero(
         id: '',
-        reservaId: widget.reserva.id,
-        viajeroId: currentUser.id,
-        anfitrionId: widget.reserva.anfitrionId ?? '',
-        propiedadId: widget.reserva.propiedadId,
+        reservaId: widget.reservaId,
+        viajeroId: widget.viajeroId,
+        anfitrionId: currentUser.id,
         calificacion: _calificacionGeneral,
         comentario: _comentarioController.text.trim().isEmpty
             ? null
             : _comentarioController.text.trim(),
         aspectos: _aspectos,
         fechaCreacion: DateTime.now(),
-        nombreViajero: '',
-        fotoViajero: null,
-        tituloPropiedad: widget.reserva.tituloPropiedad ?? 'Propiedad',
-        nombreAnfitrion: null,
+        nombreViajero: widget.nombreViajero,
+        fotoViajero: widget.fotoViajero,
+        nombreAnfitrion: '',
         fotoAnfitrion: null,
+        tituloPropiedad: widget.tituloPropiedad,
       );
 
-      final success = await _resenasRepository.crearResena(resena);
+      final success = await _resenasRepository.crearResenaViajero(resena);
 
       if (success) {
         if (mounted) {
@@ -107,20 +116,22 @@ class _CrearResenaScreenState extends State<CrearResenaScreen> {
           Navigator.of(context).pop(true);
         }
       } else {
-        throw Exception('No se pudo crear la reseña');
+        throw Exception('Error al enviar la reseña');
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al enviar reseña: $e'),
+            content: Text('Error al enviar la reseña: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
       }
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -130,44 +141,73 @@ class _CrearResenaScreenState extends State<CrearResenaScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: isDark
+          ? AppTheme.darkBackground
+          : AppTheme.lightBackground,
       appBar: AppBar(
-        title: const Text('Calificar Propiedad'),
+        title: const Text('Reseñar Viajero'),
         backgroundColor: isDark
             ? AppTheme.primaryDarkColor
             : AppTheme.primaryColor,
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Información de la propiedad
+              // Información del viajero
               Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      Text(
-                        widget.reserva.tituloPropiedad ?? 'Propiedad',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundColor: isDark
+                            ? Colors.grey[700]
+                            : Colors.grey[300],
+                        backgroundImage: widget.fotoViajero != null
+                            ? NetworkImage(widget.fotoViajero!)
+                            : null,
+                        child: widget.fotoViajero == null
+                            ? Icon(
+                                Icons.person,
+                                size: 30,
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              )
+                            : null,
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Anfitrión: ${widget.reserva.nombreAnfitrion ?? 'Desconocido'}',
-                        style: TextStyle(
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.nombreViajero,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Propiedad: ${widget.tituloPropiedad}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -177,7 +217,7 @@ class _CrearResenaScreenState extends State<CrearResenaScreen> {
 
               const SizedBox(height: 24),
 
-              // Calificación general (calculada automáticamente)
+              // Calificación general
               Text(
                 'Calificación general (calculada automáticamente)',
                 style: TextStyle(
@@ -238,24 +278,22 @@ class _CrearResenaScreenState extends State<CrearResenaScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Lista de aspectos
-              ..._aspectos.keys.map((aspecto) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
+              ..._aspectos.keys.map(
+                (aspecto) => Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _aspectosLegibles[aspecto]!,
+                        _aspectosLegibles[aspecto] ?? aspecto,
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                           color: isDark ? Colors.white : Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(5, (index) {
                           return GestureDetector(
                             onTap: () {
@@ -266,7 +304,7 @@ class _CrearResenaScreenState extends State<CrearResenaScreen> {
                             },
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
+                                horizontal: 2,
                               ),
                               child: Icon(
                                 Icons.star,
@@ -283,8 +321,8 @@ class _CrearResenaScreenState extends State<CrearResenaScreen> {
                       ),
                     ],
                   ),
-                );
-              }),
+                ),
+              ),
 
               const SizedBox(height: 24),
 
@@ -297,26 +335,40 @@ class _CrearResenaScreenState extends State<CrearResenaScreen> {
                   color: isDark ? Colors.white : Colors.black87,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _comentarioController,
-                maxLines: 5,
-                maxLength: 500,
+                maxLines: 4,
                 decoration: InputDecoration(
-                  hintText:
-                      'Cuéntanos sobre tu experiencia en esta propiedad...',
+                  hintText: 'Comparte tu experiencia con este viajero...',
                   hintStyle: TextStyle(
                     color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: isDark
+                          ? AppTheme.primaryDarkColor
+                          : AppTheme.primaryColor,
+                      width: 2,
+                    ),
+                  ),
                   filled: true,
                   fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
                 ),
                 style: TextStyle(color: isDark ? Colors.white : Colors.black87),
               ),
-              const SizedBox(height: 24),
+
+              const SizedBox(height: 32),
 
               // Botón enviar
               SizedBox(
@@ -332,6 +384,7 @@ class _CrearResenaScreenState extends State<CrearResenaScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    elevation: 2,
                   ),
                   child: _isLoading
                       ? const SizedBox(

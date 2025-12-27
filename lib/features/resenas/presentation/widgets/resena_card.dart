@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/resena.dart';
+import '../../../perfil/presentation/widgets/boton_ver_perfil.dart';
 
 class ResenaCard extends StatelessWidget {
   final Resena resena;
@@ -31,22 +32,15 @@ class ResenaCard extends StatelessWidget {
               // Header con usuario y fecha
               Row(
                 children: [
-                  // Avatar
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Theme.of(
-                      context,
-                    ).primaryColor.withValues(alpha: 0.2),
-                    backgroundImage: resena.fotoViajero != null
-                        ? NetworkImage(resena.fotoViajero!)
-                        : null,
-                    child: resena.fotoViajero == null
-                        ? Icon(
-                            Icons.person,
-                            color: Theme.of(context).primaryColor,
-                            size: 20,
-                          )
-                        : null,
+                  // Avatar clickeable - mostrar la persona correcta según el contexto
+                  BotonVerPerfil.icono(
+                    userId: esRecibida ? resena.viajeroId : resena.anfitrionId,
+                    nombreUsuario: esRecibida
+                        ? resena.nombreViajero
+                        : (resena.nombreAnfitrion ?? 'Anfitrión'),
+                    fotoUsuario: esRecibida
+                        ? resena.fotoViajero
+                        : resena.fotoAnfitrion,
                   ),
 
                   const SizedBox(width: 12),
@@ -56,17 +50,14 @@ class ResenaCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          esRecibida
+                        // Nombre clickeable - usar ID correcto según el contexto
+                        BotonVerPerfil.texto(
+                          userId: esRecibida
+                              ? resena.viajeroId
+                              : resena.anfitrionId,
+                          nombreUsuario: esRecibida
                               ? resena.nombreViajero
-                              : 'Para: ${resena.nombreViajero}',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: isDarkMode
-                                ? Theme.of(context).colorScheme.onSurface
-                                : const Color(0xFF263238),
-                          ),
+                              : (resena.nombreAnfitrion ?? 'Anfitrión'),
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -100,7 +91,7 @@ class ResenaCard extends StatelessWidget {
                         const Icon(Icons.star, size: 14, color: Colors.white),
                         const SizedBox(width: 4),
                         Text(
-                          resena.calificacion.toString(),
+                          resena.calificacion.toStringAsFixed(1),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -158,8 +149,9 @@ class ResenaCard extends StatelessWidget {
     );
   }
 
-  Color _getColorCalificacion(int calificacion) {
-    switch (calificacion) {
+  Color _getColorCalificacion(double calificacion) {
+    final calificacionRedondeada = calificacion.round();
+    switch (calificacionRedondeada) {
       case 5:
         return Colors.green;
       case 4:

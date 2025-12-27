@@ -5,6 +5,7 @@ import '../../data/models/admin_stats.dart';
 import '../../../auth/data/models/user_profile.dart';
 import '../widgets/user_action_dialog.dart';
 import '../widgets/confirmation_dialog.dart';
+import '../../../perfil/presentation/widgets/boton_ver_perfil.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/widgets/custom_app_bar_header.dart';
@@ -604,6 +605,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 12),
+
+            // Botón Ver Perfil
+            SizedBox(
+              width: double.infinity,
+              child: BotonVerPerfil.boton(
+                userId: usuario.id,
+                nombreUsuario: usuario.nombre,
+                fotoUsuario: usuario.fotoPerfilUrl,
+              ),
+            ),
+
+            const SizedBox(height: 8),
 
             // Botón degradar anfitrión
             if (usuario.rolId == 2 && usuario.estadoCuenta == 'activo')

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:donde_caigav2/main.dart';
 import 'package:donde_caigav2/features/reservas/data/models/reserva.dart';
 import 'package:donde_caigav2/features/reservas/data/repositories/reserva_repository.dart';
+import 'package:donde_caigav2/features/perfil/presentation/widgets/boton_ver_perfil.dart';
 
 class MisReservasAnfitrionScreen extends StatefulWidget {
   const MisReservasAnfitrionScreen({super.key});
@@ -393,14 +394,11 @@ class _ReservaCard extends StatelessWidget {
             // Información del viajero
             Row(
               children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundImage: reserva.fotoViajero != null
-                      ? NetworkImage(reserva.fotoViajero!)
-                      : null,
-                  child: reserva.fotoViajero == null
-                      ? const Icon(Icons.person)
-                      : null,
+                // Avatar del viajero clickeable
+                BotonVerPerfil.icono(
+                  userId: reserva.viajeroId,
+                  nombreUsuario: reserva.nombreViajero ?? 'Usuario',
+                  fotoUsuario: reserva.fotoViajero,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -414,12 +412,10 @@ class _ReservaCard extends StatelessWidget {
                           color: Color(0xFF757575),
                         ),
                       ),
-                      Text(
-                        reserva.nombreViajero ?? 'Usuario',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      // Nombre del viajero clickeable
+                      BotonVerPerfil.texto(
+                        userId: reserva.viajeroId,
+                        nombreUsuario: reserva.nombreViajero ?? 'Usuario',
                       ),
                     ],
                   ),

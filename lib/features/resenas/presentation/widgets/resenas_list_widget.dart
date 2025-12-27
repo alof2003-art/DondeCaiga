@@ -36,8 +36,8 @@ class _ResenasListWidgetState extends State<ResenasListWidget> {
       // Calcular promedio de calificación
       double promedio = 0.0;
       if (resenas.isNotEmpty) {
-        final suma = resenas.fold<int>(
-          0,
+        final suma = resenas.fold<double>(
+          0.0,
           (sum, resena) => sum + resena.calificacion,
         );
         promedio = suma / resenas.length;
@@ -212,12 +212,12 @@ class _ResenaCard extends StatelessWidget {
     );
   }
 
-  Widget _buildEstrellas(int calificacion) {
+  Widget _buildEstrellas(double calificacion) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(5, (index) {
         return Icon(
-          index < calificacion ? Icons.star : Icons.star_border,
+          index < calificacion.round() ? Icons.star : Icons.star_border,
           color: Colors.amber[700],
           size: 18,
         );

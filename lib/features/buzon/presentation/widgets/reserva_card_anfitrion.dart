@@ -4,6 +4,8 @@ import '../../data/models/reserva_chat_info.dart';
 import '../../../chat/presentation/screens/chat_conversacion_screen.dart';
 import '../../../reservas/data/models/reserva.dart';
 import '../../../explorar/presentation/screens/detalle_propiedad_screen.dart';
+import '../../../perfil/presentation/widgets/boton_ver_perfil.dart';
+import '../../../resenas/presentation/widgets/boton_resenar_viajero.dart';
 
 class ReservaCardAnfitrion extends StatefulWidget {
   final ReservaChatInfo reserva;
@@ -89,16 +91,11 @@ class _ReservaCardAnfitrionState extends State<ReservaCardAnfitrion> {
   Widget _buildHeaderHuesped(Color colorPrincipal) {
     return Row(
       children: [
-        // Avatar del huésped
-        CircleAvatar(
-          radius: 24,
-          backgroundColor: colorPrincipal.withValues(alpha: 0.2),
-          backgroundImage: reserva.fotoViajero != null
-              ? NetworkImage(reserva.fotoViajero!)
-              : null,
-          child: reserva.fotoViajero == null
-              ? Icon(Icons.person, color: colorPrincipal, size: 24)
-              : null,
+        // Avatar del huésped clickeable
+        BotonVerPerfil.icono(
+          userId: reserva.viajeroId,
+          nombreUsuario: reserva.nombreViajero,
+          fotoUsuario: reserva.fotoViajero,
         ),
 
         const SizedBox(width: 12),
@@ -108,13 +105,10 @@ class _ReservaCardAnfitrionState extends State<ReservaCardAnfitrion> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                reserva.nombreViajero ?? 'Huésped',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: colorPrincipal,
-                ),
+              // Nombre del huésped clickeable
+              BotonVerPerfil.texto(
+                userId: reserva.viajeroId,
+                nombreUsuario: reserva.nombreViajero ?? 'Huésped',
               ),
               const SizedBox(height: 2),
               Row(
@@ -331,10 +325,22 @@ class _ReservaCardAnfitrionState extends State<ReservaCardAnfitrion> {
   Widget _buildEstadoYAcciones(BuildContext context, Color colorPrincipal) {
     return Row(
       children: [
+        // Botón de reseñar viajero (solo para reservas completadas)
+        if (!esVigente) ...[
+          BotonResenarViajero(
+            reservaId: reserva.id,
+            viajeroId: reserva.viajeroId,
+            nombreViajero: reserva.nombreViajero ?? 'Viajero',
+            fotoViajero: reserva.fotoViajero,
+            tituloPropiedad: reserva.tituloPropiedad ?? 'Propiedad',
+          ),
+          const SizedBox(width: 8),
+        ],
+
         // Espacio para mantener el layout
         const Expanded(child: SizedBox()),
 
-        // Botón de acción
+        // Botón de chat
         ElevatedButton.icon(
           onPressed: () => _abrirChat(context),
           icon: const Icon(Icons.chat, size: 16),

@@ -12,9 +12,9 @@ class FontScaleWrapper extends StatelessWidget {
     return Consumer<FontSizeService>(
       builder: (context, fontSizeService, _) {
         return MediaQuery(
-          data: MediaQuery.of(
-            context,
-          ).copyWith(textScaleFactor: fontSizeService.currentScale),
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(fontSizeService.currentScale),
+          ),
           child: child,
         );
       },

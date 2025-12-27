@@ -4,6 +4,7 @@ import 'package:donde_caigav2/main.dart';
 import 'package:donde_caigav2/features/reservas/data/models/reserva.dart';
 import 'package:donde_caigav2/features/chat/data/models/mensaje.dart';
 import 'package:donde_caigav2/features/chat/data/repositories/mensaje_repository.dart';
+import '../../../perfil/presentation/widgets/boton_ver_perfil.dart';
 
 class ChatConversacionScreen extends StatefulWidget {
   final Reserva reserva;
@@ -117,18 +118,44 @@ class _ChatConversacionScreenState extends State<ChatConversacionScreen> {
   Widget build(BuildContext context) {
     final user = supabase.auth.currentUser;
 
+    // Determinar quién es el otro usuario
+    final esViajero = user?.id == widget.reserva.viajeroId;
+    final otroUsuarioId = esViajero
+        ? widget.reserva.anfitrionId
+        : widget.reserva.viajeroId;
+    final nombreOtroUsuario = esViajero
+        ? widget.reserva.nombreAnfitrion
+        : widget.reserva.nombreViajero;
+    final fotoOtroUsuario = esViajero
+        ? widget.reserva.fotoAnfitrion
+        : widget.reserva.fotoViajero;
+
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            Text(
-              widget.reserva.tituloPropiedad ?? 'Chat',
-              style: const TextStyle(fontSize: 16),
+            // Avatar del otro usuario clickeable
+            BotonVerPerfil.icono(
+              userId: otroUsuarioId ?? '',
+              nombreUsuario: nombreOtroUsuario,
+              fotoUsuario: fotoOtroUsuario,
             ),
-            Text(
-              '${DateFormat('dd/MM').format(widget.reserva.fechaInicio)} - ${DateFormat('dd/MM').format(widget.reserva.fechaFin)}',
-              style: const TextStyle(fontSize: 12),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Nombre del otro usuario clickeable
+                  BotonVerPerfil.texto(
+                    userId: otroUsuarioId ?? '',
+                    nombreUsuario: nombreOtroUsuario ?? 'Usuario',
+                  ),
+                  Text(
+                    '${DateFormat('dd/MM').format(widget.reserva.fechaInicio)} - ${DateFormat('dd/MM').format(widget.reserva.fechaFin)}',
+                    style: const TextStyle(fontSize: 12, color: Colors.white70),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

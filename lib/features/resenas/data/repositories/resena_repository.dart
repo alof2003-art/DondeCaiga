@@ -89,7 +89,7 @@ class ResenaRepository {
     required String propiedadId,
     required String viajeroId,
     String? reservaId,
-    required int calificacion,
+    required double calificacion,
     String? comentario,
   }) async {
     try {
@@ -117,7 +117,7 @@ class ResenaRepository {
       if (response.isEmpty) return 0.0;
 
       final calificaciones = (response as List)
-          .map((r) => r['calificacion'] as int)
+          .map((r) => (r['calificacion'] as num).toDouble())
           .toList();
 
       final suma = calificaciones.reduce((a, b) => a + b);

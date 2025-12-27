@@ -8,6 +8,7 @@ import 'package:donde_caigav2/features/propiedades/data/models/propiedad.dart';
 import 'package:donde_caigav2/features/propiedades/data/repositories/propiedad_repository.dart';
 import 'package:donde_caigav2/features/reservas/presentation/screens/reserva_calendario_screen.dart';
 import 'package:donde_caigav2/features/resenas/presentation/widgets/resenas_list_widget.dart';
+import 'package:donde_caigav2/features/perfil/presentation/widgets/boton_ver_perfil.dart';
 
 class DetallePropiedadScreen extends StatefulWidget {
   final String propiedadId;
@@ -189,14 +190,11 @@ class _DetallePropiedadScreenState extends State<DetallePropiedadScreen> {
                 if (_anfitrion != null)
                   Row(
                     children: [
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundImage: _anfitrion!.fotoPerfilUrl != null
-                            ? NetworkImage(_anfitrion!.fotoPerfilUrl!)
-                            : null,
-                        child: _anfitrion!.fotoPerfilUrl == null
-                            ? const Icon(Icons.person)
-                            : null,
+                      // Avatar del anfitrión clickeable
+                      BotonVerPerfil.icono(
+                        userId: _anfitrion!.id,
+                        nombreUsuario: _anfitrion!.nombre,
+                        fotoUsuario: _anfitrion!.fotoPerfilUrl,
                       ),
                       const SizedBox(width: 12),
                       Column(
@@ -206,12 +204,10 @@ class _DetallePropiedadScreenState extends State<DetallePropiedadScreen> {
                             'Anfitrión',
                             style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
-                          Text(
-                            _anfitrion!.nombre,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          // Nombre del anfitrión clickeable
+                          BotonVerPerfil.texto(
+                            userId: _anfitrion!.id,
+                            nombreUsuario: _anfitrion!.nombre,
                           ),
                         ],
                       ),

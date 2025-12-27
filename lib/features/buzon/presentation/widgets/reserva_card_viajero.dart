@@ -4,7 +4,8 @@ import '../../data/models/reserva_chat_info.dart';
 import '../../../chat/presentation/screens/chat_conversacion_screen.dart';
 import '../../../reservas/data/models/reserva.dart';
 import '../../../explorar/presentation/screens/detalle_propiedad_screen.dart';
-import '../../../resenas/presentation/screens/crear_resena_screen.dart';
+import '../../../perfil/presentation/widgets/boton_ver_perfil.dart';
+import '../../../resenas/presentation/widgets/boton_resenar_propiedad.dart';
 
 class ReservaCardViajero extends StatefulWidget {
   final ReservaChatInfo reserva;
@@ -173,16 +174,11 @@ class _ReservaCardViajeroState extends State<ReservaCardViajero> {
       ),
       child: Row(
         children: [
-          // Avatar del anfitrión
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: colorPrincipal.withValues(alpha: 0.2),
-            backgroundImage: reserva.fotoAnfitrion != null
-                ? NetworkImage(reserva.fotoAnfitrion!)
-                : null,
-            child: reserva.fotoAnfitrion == null
-                ? Icon(Icons.person, color: colorPrincipal, size: 16)
-                : null,
+          // Avatar del anfitrión clickeable
+          BotonVerPerfil.icono(
+            userId: reserva.anfitrionId ?? '',
+            nombreUsuario: reserva.nombreAnfitrion,
+            fotoUsuario: reserva.fotoAnfitrion,
           ),
 
           const SizedBox(width: 8),
@@ -192,13 +188,11 @@ class _ReservaCardViajeroState extends State<ReservaCardViajero> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Anfitrión: ${reserva.nombreAnfitrion ?? 'Anfitrión'}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF424242), // Color fijo como en Mis Viajes
-                  ),
+                // Nombre del anfitrión clickeable
+                BotonVerPerfil.texto(
+                  userId: reserva.anfitrionId ?? '',
+                  nombreUsuario:
+                      'Anfitrión: ${reserva.nombreAnfitrion ?? 'Anfitrión'}',
                 ),
                 const SizedBox(height: 2),
                 Row(
@@ -425,57 +419,13 @@ class _ReservaCardViajeroState extends State<ReservaCardViajero> {
           children: [
             // Botón de reseña (solo para reservas pasadas)
             if (!esVigente) ...[
-              if (reserva.puedeResenar && !reserva.yaReseno) ...[
-                ElevatedButton.icon(
-                  onPressed: () => _escribirResena(context),
-                  icon: const Icon(Icons.rate_review, size: 16),
-                  label: const Text('Reseñar'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF9800),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ] else if (reserva.yaReseno) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green[100],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.green[300]!),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.check_circle,
-                        size: 16,
-                        color: Colors.green[700],
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Reseñado',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.green[700],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
+              BotonResenarPropiedad(
+                reservaId: reserva.id,
+                propiedadId: reserva.propiedadId,
+                tituloPropiedad: reserva.tituloPropiedad ?? 'Propiedad',
+                onResenaCreada: onResenaCreada,
+              ),
+              const SizedBox(width: 8),
             ],
 
             // Botón de chat
@@ -514,40 +464,6 @@ class _ReservaCardViajeroState extends State<ReservaCardViajero> {
     } else {
       return 'Reciente';
     }
-  }
-
-  void _escribirResena(BuildContext context) {
-    // Crear objeto Reserva desde ReservaChatInfo para la pantalla de reseña
-    final reservaParaResena = Reserva(
-      id: reserva.id,
-      propiedadId: reserva.propiedadId,
-      viajeroId: reserva.viajeroId,
-      fechaInicio: reserva.fechaInicio,
-      fechaFin: reserva.fechaFin,
-      estado: reserva.estado,
-      createdAt: reserva.createdAt,
-      updatedAt: reserva.updatedAt,
-      codigoVerificacion: reserva.codigoVerificacion,
-      tituloPropiedad: reserva.tituloPropiedad,
-      fotoPrincipalPropiedad: reserva.fotoPrincipalPropiedad,
-      nombreViajero: reserva.nombreViajero,
-      fotoViajero: reserva.fotoViajero,
-      nombreAnfitrion: reserva.nombreAnfitrion,
-      fotoAnfitrion: reserva.fotoAnfitrion,
-      anfitrionId: reserva.anfitrionId,
-    );
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CrearResenaScreen(reserva: reservaParaResena),
-      ),
-    ).then((resultado) {
-      // Si se creó la reseña exitosamente, actualizar el estado
-      if (resultado == true && onResenaCreada != null) {
-        onResenaCreada!();
-      }
-    });
   }
 
   void _verDetallesPropiedad(BuildContext context) {

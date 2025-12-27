@@ -305,7 +305,7 @@ class _FiltrosChatDialogState extends State<FiltrosChatDialog> {
                 fontSize: 14,
                 color: fecha != null
                     ? (Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white.withOpacity(0.87)
+                          ? Colors.white.withValues(alpha: 0.87)
                           : Colors.black)
                     : Colors.grey[500],
               ),
