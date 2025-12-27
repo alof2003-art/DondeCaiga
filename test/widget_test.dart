@@ -11,16 +11,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:donde_caigav2/main.dart';
 import 'package:donde_caigav2/core/services/theme_service.dart';
 import 'package:donde_caigav2/core/services/font_size_service.dart';
+import 'package:donde_caigav2/features/notificaciones/presentation/providers/notificaciones_provider.dart';
 
 void main() {
   testWidgets('App loads correctly', (WidgetTester tester) async {
     // Create services for test
     final themeService = ThemeService();
     final fontSizeService = FontSizeService();
+    final notificacionesProvider = NotificacionesProvider();
 
     // Build our app and trigger a frame.
     await tester.pumpWidget(
-      MyApp(themeService: themeService, fontSizeService: fontSizeService),
+      MyApp(
+        themeService: themeService,
+        fontSizeService: fontSizeService,
+        notificacionesProvider: notificacionesProvider,
+      ),
     );
 
     // Verify that the app loads

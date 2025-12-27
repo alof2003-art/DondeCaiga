@@ -17,6 +17,7 @@ class MensajeRepository {
       'remitente_id': remitenteId,
       'mensaje': mensaje,
       'leido': false,
+      'created_at': DateTime.now().toUtc().toIso8601String(), // Forzar UTC
     });
   }
 
@@ -26,7 +27,7 @@ class MensajeRepository {
         .from('mensajes')
         .select()
         .eq('reserva_id', reservaId)
-        .order('created_at', ascending: true);
+        .order('created_at', ascending: true); // Orden cronológico correcto
 
     return (response as List).map((json) => Mensaje.fromJson(json)).toList();
   }

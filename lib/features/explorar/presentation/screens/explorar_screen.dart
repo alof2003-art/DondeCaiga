@@ -7,6 +7,7 @@ import '../../../../core/widgets/custom_app_bar_header.dart';
 import '../../../../core/utils/navigation_utils.dart';
 import '../../data/models/filtro_explorar.dart';
 import '../widgets/filtros_explorar_dialog.dart';
+import '../../../notificaciones/presentation/widgets/icono_notificaciones.dart';
 
 class ExplorarScreen extends StatefulWidget {
   const ExplorarScreen({super.key});
@@ -305,6 +306,7 @@ class _ExplorarScreenState extends State<ExplorarScreen> {
         ),
         backgroundColor: const Color(0xFF4DB6AC),
         foregroundColor: Colors.white,
+        actions: const [IconoNotificacionesCompacto()],
       ),
       body: Column(
         children: [

@@ -22,7 +22,8 @@ class Mensaje {
       remitenteId: json['remitente_id'] as String,
       mensaje: json['mensaje'] as String,
       leido: json['leido'] as bool? ?? false,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      // Convertir UTC a hora local correctamente
+      createdAt: DateTime.parse(json['created_at'] as String).toLocal(),
     );
   }
 

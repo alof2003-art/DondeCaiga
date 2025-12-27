@@ -5,6 +5,8 @@ import '../../../../services/storage_service.dart';
 import '../../../auth/data/repositories/user_repository.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
 import '../../../../core/widgets/user_name_widget.dart';
+import '../../../notificaciones/utils/notificaciones_helper.dart';
+import '../../../notificaciones/services/simple_fcm_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -34,11 +36,31 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _userEmail = user.email;
       });
+
+      // Inicializar notificaciones después del login
+      try {
+        debugPrint('🔔 Inicializando notificaciones para usuario logueado...');
+
+        // Usar servicio simple para debuggear
+        await SimpleFCMService.initializeAndGetToken();
+
+        // También inicializar el sistema completo
+        if (mounted) {
+          await NotificacionesHelper.inicializarParaUsuario(context);
+        }
+
+        debugPrint('✅ Notificaciones inicializadas correctamente');
+      } catch (e) {
+        debugPrint('❌ Error al inicializar notificaciones: $e');
+      }
     }
   }
 
   Future<void> _handleLogout() async {
     try {
+      // Limpiar notificaciones antes de cerrar sesión
+      NotificacionesHelper.limpiarNotificaciones(context);
+
       await _authService.signOut();
 
       if (!mounted) return;
@@ -111,6 +133,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(fontSize: 18, color: Color(0xFF263238)),
               ),
               const SizedBox(height: 48),
+              // Botón de debug para FCM
+              ElevatedButton.icon(
+                onPressed: () async {
+                  debugPrint('🔍 === INICIANDO DEBUG FCM ===');
+                  await SimpleFCMService.checkTokenStatus();
+                },
+                icon: const Icon(Icons.bug_report),
+                label: const Text('Debug FCM Token'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: _handleLogout,
                 icon: const Icon(Icons.logout),
