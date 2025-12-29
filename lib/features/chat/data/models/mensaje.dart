@@ -38,7 +38,7 @@ class Mensaje {
       }
 
       // Si no tiene zona horaria, asumir que es UTC y convertir a local
-      final utcDateTime = DateTime.parse(dateTimeString + 'Z');
+      final utcDateTime = DateTime.parse('${dateTimeString}Z');
       return utcDateTime.toLocal();
     } catch (e) {
       // Fallback: usar DateTime.now() si hay error

@@ -323,6 +323,9 @@ class _ReservaCardAnfitrionState extends State<ReservaCardAnfitrion> {
   }
 
   Widget _buildEstadoYAcciones(BuildContext context, Color colorPrincipal) {
+    // Calcular si debe mostrar el botón de chat
+    final mostrarChat = _deberMostrarBotonChat();
+
     return Row(
       children: [
         // Botón de reseñar viajero (solo para reservas completadas)
@@ -340,23 +343,64 @@ class _ReservaCardAnfitrionState extends State<ReservaCardAnfitrion> {
         // Espacio para mantener el layout
         const Expanded(child: SizedBox()),
 
-        // Botón de chat
-        ElevatedButton.icon(
-          onPressed: () => _abrirChat(context),
-          icon: const Icon(Icons.chat, size: 16),
-          label: const Text('Chat'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: colorPrincipal,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            shape: RoundedRectangleBorder(
+        // Botón de chat (con lógica de tiempo)
+        if (mostrarChat) ...[
+          ElevatedButton.icon(
+            onPressed: () => _abrirChat(context),
+            icon: const Icon(Icons.chat, size: 16),
+            label: const Text('Chat'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorPrincipal,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: esVigente ? 2 : 1,
+            ),
+          ),
+        ] else if (!esVigente) ...[
+          // Mensaje explicativo cuando el chat ya no está disponible
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
               borderRadius: BorderRadius.circular(8),
             ),
-            elevation: esVigente ? 2 : 1,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.chat_bubble_outline,
+                  size: 14,
+                  color: Colors.grey[600],
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Chat no disponible',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ],
     );
+  }
+
+  /// Determina si debe mostrar el botón de chat basándose en el tiempo transcurrido
+  bool _deberMostrarBotonChat() {
+    // Para reservas vigentes, siempre mostrar chat
+    if (esVigente) {
+      return true;
+    }
+
+    // Para reservas pasadas, solo mostrar si han pasado menos de 5 días
+    final ahora = DateTime.now();
+    final diferencia = ahora.difference(reserva.fechaFin);
+
+    // Mostrar chat solo si han pasado menos de 5 días desde el fin de la reserva
+    return diferencia.inDays < 5;
   }
 
   Widget _buildCodigoVerificacion(Color colorPrincipal) {

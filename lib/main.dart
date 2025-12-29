@@ -11,13 +11,14 @@ import 'core/services/font_size_service.dart';
 import 'core/widgets/font_scale_wrapper.dart';
 import 'core/theme/app_theme.dart';
 import 'features/notificaciones/presentation/providers/notificaciones_provider.dart';
-import 'features/notificaciones/services/push_notifications_service.dart';
 
-// Handler para notificaciones en background
+// ✅ Background Handler para notificaciones
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   debugPrint('🔔 Notificación en background: ${message.messageId}');
+  debugPrint('📱 Título: ${message.notification?.title}');
+  debugPrint('📝 Cuerpo: ${message.notification?.body}');
 }
 
 Future<void> main() async {
@@ -46,32 +47,12 @@ Future<void> main() async {
     anonKey: AppConfig.supabaseAnonKey,
   );
 
-  // Inicializar servicio de tema
+  // Inicializar servicios
   final themeService = ThemeService();
   await themeService.initialize();
 
-  // Inicializar servicio de tamaño de fuente
   final fontSizeService = FontSizeService();
-
-  // Inicializar servicio de notificaciones push
-  final pushNotificationsService = PushNotificationsService();
-  await pushNotificationsService.initialize();
-
-  // Inicializar provider de notificaciones
   final notificacionesProvider = NotificacionesProvider();
-
-  // Configurar callbacks del servicio de notificaciones
-  pushNotificationsService.setCallbacks(
-    onMessageReceived: (data) {
-      debugPrint('📨 Mensaje recibido: $data');
-      // Actualizar el provider para refrescar la UI
-      notificacionesProvider.cargarNotificaciones();
-    },
-    onMessageOpened: (data) {
-      debugPrint('👆 Notificación abierta: $data');
-      // Aquí puedes manejar la navegación
-    },
-  );
 
   runApp(
     MyApp(

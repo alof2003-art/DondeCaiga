@@ -1,0 +1,310 @@
+[
+  {
+    "routine_name": "simple_message_trigger",
+    "routine_definition": "\r\nBEGIN\r\n    -- Solo registrar el mensaje, sin notificaciones por ahora\r\n    -- Esto evita cualquier error de tablas faltantes\r\n    RETURN NEW;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "get_audit_log_with_names",
+    "routine_definition": "\r\n  SELECT \r\n    al.id,\r\n    al.admin_id,\r\n    admin_profile.nombre as admin_nombre,\r\n    al.target_user_id,\r\n    target_profile.nombre as target_user_nombre,\r\n    al.action_type,\r\n    al.action_data,\r\n    al.reason,\r\n    al.was_successful,\r\n    al.created_at\r\n  FROM admin_audit_log al\r\n  LEFT JOIN users_profiles admin_profile ON al.admin_id = admin_profile.id\r\n  LEFT JOIN users_profiles target_profile ON al.target_user_id = target_profile.id\r\n  ORDER BY al.created_at DESC;\r\n"
+  },
+  {
+    "routine_name": "begin_transaction",
+    "routine_definition": "\r\n  SELECT 1; -- No-op, Supabase maneja transacciones automáticamente\r\n"
+  },
+  {
+    "routine_name": "commit_transaction",
+    "routine_definition": "\r\n  SELECT 1; -- No-op, Supabase maneja transacciones automáticamente\r\n"
+  },
+  {
+    "routine_name": "rollback_transaction",
+    "routine_definition": "\r\n  SELECT 1; -- No-op, Supabase maneja transacciones automáticamente\r\n"
+  },
+  {
+    "routine_name": "create_notification",
+    "routine_definition": "\r\nDECLARE\r\n  notification_id UUID;\r\n  user_settings RECORD;\r\nBEGIN\r\n  -- Verificar configuración del usuario\r\n  SELECT * INTO user_settings \r\n  FROM notification_settings \r\n  WHERE user_id = p_user_id;\r\n  \r\n  -- Si no tiene configuración, crear una por defecto\r\n  IF user_settings IS NULL THEN\r\n    INSERT INTO notification_settings (user_id) VALUES (p_user_id);\r\n    SELECT * INTO user_settings \r\n    FROM notification_settings \r\n    WHERE user_id = p_user_id;\r\n  END IF;\r\n  \r\n  -- Verificar si el tipo de notificación está habilitado\r\n  IF should_send_notification(user_settings, p_type) THEN\r\n    INSERT INTO notifications (user_id, type, title, message, metadata)\r\n    VALUES (p_user_id, p_type, p_title, p_message, p_metadata)\r\n    RETURNING id INTO notification_id;\r\n    \r\n    RETURN notification_id;\r\n  END IF;\r\n  \r\n  RETURN NULL;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "send_push_notification_simple",
+    "routine_definition": "\r\nDECLARE\r\n    user_fcm_token TEXT;\r\n    notification_settings RECORD;\r\n    http_request_id BIGINT;\r\nBEGIN\r\n    -- Verificar si el usuario tiene notificaciones push habilitadas\r\n    SELECT * INTO notification_settings \r\n    FROM public.notification_settings \r\n    WHERE user_id = p_user_id;\r\n    \r\n    -- Si no tiene configuración o tiene push deshabilitado, no enviar\r\n    IF notification_settings IS NULL OR NOT notification_settings.push_notifications_enabled THEN\r\n        RETURN FALSE;\r\n    END IF;\r\n    \r\n    -- Obtener el token FCM del usuario\r\n    SELECT up.fcm_token INTO user_fcm_token\r\n    FROM public.users_profiles up\r\n    WHERE up.id = p_user_id AND up.fcm_token IS NOT NULL;\r\n    \r\n    -- Si no tiene token FCM, no se puede enviar push\r\n    IF user_fcm_token IS NULL THEN\r\n        RETURN FALSE;\r\n    END IF;\r\n    \r\n    -- Registrar en cola (sin llamar a Edge Function por ahora)\r\n    INSERT INTO public.push_notification_queue (\r\n        user_id,\r\n        fcm_token,\r\n        title,\r\n        body,\r\n        data,\r\n        created_at,\r\n        status\r\n    ) VALUES (\r\n        p_user_id,\r\n        user_fcm_token,\r\n        p_title,\r\n        p_body,\r\n        '{}'::jsonb,\r\n        NOW(),\r\n        'pending'\r\n    );\r\n    \r\n    RETURN TRUE;\r\n    \r\nEXCEPTION WHEN OTHERS THEN\r\n    -- Si falla, registrar error\r\n    INSERT INTO public.push_notification_queue (\r\n        user_id,\r\n        fcm_token,\r\n        title,\r\n        body,\r\n        data,\r\n        created_at,\r\n        status,\r\n        error_message\r\n    ) VALUES (\r\n        p_user_id,\r\n        COALESCE(user_fcm_token, 'no_token'),\r\n        p_title,\r\n        p_body,\r\n        '{}'::jsonb,\r\n        NOW(),\r\n        'failed',\r\n        SQLERRM\r\n    );\r\n    \r\n    RETURN FALSE;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "can_review_property",
+    "routine_definition": "\r\nBEGIN\r\n    RETURN EXISTS (\r\n        SELECT 1 \r\n        FROM public.reservas r\r\n        WHERE r.id = reserva_uuid\r\n        AND r.viajero_id = viajero_uuid\r\n        AND (r.estado = 'completada' OR r.fecha_fin < NOW()::date)\r\n        AND NOT EXISTS (\r\n            SELECT 1 FROM public.resenas re\r\n            WHERE re.reserva_id = reserva_uuid \r\n            AND re.viajero_id = viajero_uuid\r\n        )\r\n    );\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "get_propiedades_con_calificaciones",
+    "routine_definition": "\r\n  SELECT \r\n    p.id,\r\n    p.anfitrion_id,\r\n    p.titulo,\r\n    p.descripcion,\r\n    p.direccion,\r\n    p.ciudad,\r\n    p.pais,\r\n    p.latitud,\r\n    p.longitud,\r\n    p.capacidad_personas,\r\n    p.numero_habitaciones,\r\n    p.numero_banos,\r\n    p.tiene_garaje,\r\n    p.foto_principal_url,\r\n    p.estado,\r\n    p.created_at,\r\n    p.updated_at,\r\n    up.nombre as nombre_anfitrion,\r\n    up.foto_perfil_url as foto_anfitrion,\r\n    AVG(r.calificacion)::double precision as calificacion_promedio,\r\n    COUNT(r.id) as numero_resenas,\r\n    (\r\n      SELECT AVG(r2.calificacion)::double precision\r\n      FROM resenas r2\r\n      JOIN propiedades p2 ON r2.propiedad_id = p2.id\r\n      WHERE p2.anfitrion_id = p.anfitrion_id\r\n    ) as calificacion_anfitrion\r\n  FROM propiedades p\r\n  LEFT JOIN users_profiles up ON p.anfitrion_id = up.id\r\n  LEFT JOIN resenas r ON p.id = r.propiedad_id\r\n  WHERE p.estado = 'activo'\r\n  GROUP BY p.id, up.nombre, up.foto_perfil_url\r\n  ORDER BY p.created_at DESC;\r\n"
+  },
+  {
+    "routine_name": "should_send_notification",
+    "routine_definition": "\r\nBEGIN\r\n  CASE notification_type\r\n    WHEN 'new_reservation', 'reservation_cancelled', 'reservation_confirmed', 'reservation_rejected' THEN\r\n      RETURN user_settings.reservations_enabled;\r\n    WHEN 'new_message' THEN\r\n      RETURN user_settings.messages_enabled;\r\n    WHEN 'new_review' THEN\r\n      RETURN user_settings.reviews_enabled;\r\n    WHEN 'check_in_reminder', 'check_out_reminder' THEN\r\n      RETURN user_settings.reminders_enabled;\r\n    WHEN 'host_application_pending', 'host_application_approved', 'host_application_rejected', 'account_verification_required', 'content_reported' THEN\r\n      RETURN user_settings.admin_notifications_enabled;\r\n    ELSE\r\n      RETURN TRUE; -- Por defecto, enviar notificaciones desconocidas\r\n  END CASE;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "calcular_promedio_aspectos_propiedades",
+    "routine_definition": "\r\nDECLARE\r\n    suma integer := 0;\r\n    contador integer := 0;\r\n    aspecto_valor integer;\r\n    promedio numeric;\r\nBEGIN\r\n    IF aspectos_json IS NULL THEN\r\n        RETURN 1.0;\r\n    END IF;\r\n    \r\n    -- Iterar sobre todos los aspectos en el JSON\r\n    FOR aspecto_valor IN \r\n        SELECT value::integer \r\n        FROM jsonb_each_text(aspectos_json) \r\n        WHERE value IS NOT NULL AND value != 'null' AND value ~ '^[0-9]+$'\r\n    LOOP\r\n        suma := suma + aspecto_valor;\r\n        contador := contador + 1;\r\n    END LOOP;\r\n    \r\n    -- Si no hay aspectos, devolver 1\r\n    IF contador = 0 THEN\r\n        RETURN 1.0;\r\n    END IF;\r\n    \r\n    -- Calcular promedio exacto (sin redondear)\r\n    promedio := suma::numeric / contador::numeric;\r\n    \r\n    -- Asegurar que esté entre 1.0 y 5.0\r\n    RETURN GREATEST(1.0, LEAST(5.0, promedio));\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "trigger_send_push_simple",
+    "routine_definition": "\r\nBEGIN\r\n    -- Solo enviar push para notificaciones nuevas (no leídas)\r\n    IF NEW.is_read = FALSE THEN\r\n        PERFORM send_push_notification_simple(\r\n            NEW.user_id,\r\n            NEW.title,\r\n            NEW.message\r\n        );\r\n    END IF;\r\n    \r\n    RETURN NEW;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "process_push_queue_manual",
+    "routine_definition": "\r\nBEGIN\r\n    RETURN QUERY\r\n    SELECT \r\n        pnq.id,\r\n        pnq.fcm_token,\r\n        pnq.title,\r\n        pnq.body,\r\n        pnq.status\r\n    FROM public.push_notification_queue pnq\r\n    WHERE pnq.status = 'pending'\r\n    ORDER BY pnq.created_at ASC\r\n    LIMIT 10;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "process_push_notification_queue",
+    "routine_definition": "\r\nDECLARE\r\n    notification_record RECORD;\r\n    processed_count INTEGER := 0;\r\nBEGIN\r\n    -- Procesar notificaciones pendientes (máximo 50 por vez)\r\n    FOR notification_record IN \r\n        SELECT * FROM public.push_notification_queue \r\n        WHERE status = 'pending' \r\n        AND attempts < 3\r\n        ORDER BY created_at ASC \r\n        LIMIT 50\r\n    LOOP\r\n        -- Aquí se llamaría a la Edge Function real\r\n        -- Por ahora solo marcamos como enviado\r\n        UPDATE public.push_notification_queue \r\n        SET \r\n            status = 'sent',\r\n            sent_at = NOW(),\r\n            attempts = attempts + 1\r\n        WHERE id = notification_record.id;\r\n        \r\n        processed_count := processed_count + 1;\r\n    END LOOP;\r\n    \r\n    RETURN processed_count;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "cleanup_old_push_notifications",
+    "routine_definition": "\r\nDECLARE\r\n    deleted_count INTEGER;\r\nBEGIN\r\n    -- Eliminar notificaciones push enviadas hace más de 7 días\r\n    DELETE FROM public.push_notification_queue \r\n    WHERE status = 'sent' \r\n    AND sent_at < NOW() - INTERVAL '7 days';\r\n    \r\n    GET DIAGNOSTICS deleted_count = ROW_COUNT;\r\n    RETURN deleted_count;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "test_push_simple",
+    "routine_definition": "\r\nDECLARE\r\n    result BOOLEAN;\r\nBEGIN\r\n    SELECT send_push_notification_simple(\r\n        '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid,\r\n        'Prueba Manual 🧪',\r\n        'Esta es una prueba del sistema simplificado'\r\n    ) INTO result;\r\n    \r\n    IF result THEN\r\n        RETURN '✅ Notificación agregada a la cola exitosamente';\r\n    ELSE\r\n        RETURN '❌ Error: Verifica FCM token y configuración';\r\n    END IF;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "check_fcm_token_status",
+    "routine_definition": "\r\nBEGIN\r\n    RETURN QUERY\r\n    SELECT \r\n        'DESPUÉS DE REINICIAR APP'::TEXT,\r\n        up.id,\r\n        CASE \r\n            WHEN up.fcm_token IS NOT NULL THEN 'Token generado ✅'\r\n            ELSE 'Token faltante ❌ - Espera más tiempo'\r\n        END::TEXT,\r\n        COALESCE(LEFT(up.fcm_token, 30) || '...', 'NULL')::TEXT,\r\n        CASE \r\n            WHEN pg_tables.rowsecurity THEN 'RLS Activado ❌'\r\n            ELSE 'RLS Desactivado ✅'\r\n        END::TEXT\r\n    FROM users_profiles up\r\n    CROSS JOIN (\r\n        SELECT rowsecurity \r\n        FROM pg_tables \r\n        WHERE tablename = 'users_profiles'\r\n    ) pg_tables\r\n    WHERE up.id = '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "reactivar_rls_cuando_funcione",
+    "routine_definition": "\r\nBEGIN\r\n    -- Solo reactivar si el token ya existe\r\n    IF EXISTS(\r\n        SELECT 1 FROM users_profiles \r\n        WHERE id = '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid \r\n        AND fcm_token IS NOT NULL\r\n    ) THEN\r\n        ALTER TABLE users_profiles ENABLE ROW LEVEL SECURITY;\r\n        \r\n        -- Crear política permisiva\r\n        DROP POLICY IF EXISTS \"Allow all operations\" ON users_profiles;\r\n        CREATE POLICY \"Allow all operations\" \r\n        ON users_profiles \r\n        USING (true) \r\n        WITH CHECK (true);\r\n        \r\n        RETURN '✅ RLS reactivado con política permisiva';\r\n    ELSE\r\n        RETURN '❌ No se puede reactivar RLS - Token aún no existe';\r\n    END IF;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "update_reservas_updated_at",
+    "routine_definition": "\r\nBEGIN\r\n    NEW.updated_at = NOW();\r\n    RETURN NEW;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "send_push_notification",
+    "routine_definition": "\r\nDECLARE\r\n    fcm_token TEXT;\r\n    notification_settings RECORD;\r\n    edge_function_response TEXT;\r\nBEGIN\r\n    -- Verificar si el usuario tiene notificaciones push habilitadas\r\n    SELECT * INTO notification_settings \r\n    FROM public.notification_settings \r\n    WHERE user_id = p_user_id;\r\n    \r\n    -- Si no tiene configuración o tiene push deshabilitado, no enviar\r\n    IF notification_settings IS NULL OR NOT notification_settings.push_notifications_enabled THEN\r\n        RETURN FALSE;\r\n    END IF;\r\n    \r\n    -- Obtener el token FCM del usuario\r\n    SELECT fcm_token INTO fcm_token \r\n    FROM public.users_profiles \r\n    WHERE id = p_user_id AND fcm_token IS NOT NULL;\r\n    \r\n    -- Si no tiene token FCM, no se puede enviar push\r\n    IF fcm_token IS NULL THEN\r\n        RETURN FALSE;\r\n    END IF;\r\n    \r\n    -- Llamar a la Edge Function para enviar la notificación push\r\n    -- (Por ahora solo registramos que se debería enviar)\r\n    INSERT INTO public.push_notification_queue (\r\n        user_id,\r\n        fcm_token,\r\n        title,\r\n        body,\r\n        data,\r\n        created_at,\r\n        status\r\n    ) VALUES (\r\n        p_user_id,\r\n        fcm_token,\r\n        p_title,\r\n        p_body,\r\n        p_data,\r\n        NOW(),\r\n        'pending'\r\n    );\r\n    \r\n    RETURN TRUE;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "process_push_queue_with_edge_function",
+    "routine_definition": "\r\nDECLARE\r\n    notification_record RECORD;\r\n    processed_count INTEGER := 0;\r\n    http_request_id BIGINT;\r\n    edge_function_url TEXT := 'https://TU-PROYECTO.supabase.co/functions/v1/send-push-notification';\r\n    supabase_anon_key TEXT := 'TU-ANON-KEY';\r\nBEGIN\r\n    -- Procesar notificaciones pendientes (máximo 10 por vez)\r\n    FOR notification_record IN \r\n        SELECT * FROM public.push_notification_queue \r\n        WHERE status = 'pending' \r\n        AND attempts < 3\r\n        ORDER BY created_at ASC \r\n        LIMIT 10\r\n    LOOP\r\n        BEGIN\r\n            -- Llamar a tu Edge Function\r\n            SELECT net.http_post(\r\n                url := edge_function_url,\r\n                headers := jsonb_build_object(\r\n                    'Content-Type', 'application/json',\r\n                    'Authorization', 'Bearer ' || supabase_anon_key\r\n                ),\r\n                body := jsonb_build_object(\r\n                    'fcm_token', notification_record.fcm_token,\r\n                    'title', notification_record.title,\r\n                    'body', notification_record.body\r\n                )\r\n            ) INTO http_request_id;\r\n            \r\n            -- Marcar como enviado\r\n            UPDATE public.push_notification_queue \r\n            SET \r\n                status = 'sent',\r\n                sent_at = NOW(),\r\n                attempts = attempts + 1,\r\n                http_request_id = http_request_id\r\n            WHERE id = notification_record.id;\r\n            \r\n            processed_count := processed_count + 1;\r\n            \r\n        EXCEPTION WHEN OTHERS THEN\r\n            -- Marcar como fallido si hay error\r\n            UPDATE public.push_notification_queue \r\n            SET \r\n                status = 'failed',\r\n                attempts = attempts + 1,\r\n                error_message = SQLERRM\r\n            WHERE id = notification_record.id;\r\n        END;\r\n    END LOOP;\r\n    \r\n    RETURN processed_count;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "probar_insercion_token_manual",
+    "routine_definition": "\r\nDECLARE\r\n    test_token TEXT;\r\n    resultado TEXT;\r\nBEGIN\r\n    -- Generar token de prueba único\r\n    test_token := 'manual_test_token_' || EXTRACT(EPOCH FROM NOW())::text;\r\n    \r\n    BEGIN\r\n        -- Intentar insertar directamente\r\n        UPDATE public.users_profiles \r\n        SET fcm_token = test_token, updated_at = NOW()\r\n        WHERE id = '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid;\r\n        \r\n        IF FOUND THEN\r\n            resultado := '✅ INSERCIÓN MANUAL EXITOSA: ' || test_token;\r\n        ELSE\r\n            resultado := '❌ NO SE ENCONTRÓ EL USUARIO';\r\n        END IF;\r\n        \r\n        RETURN resultado;\r\n        \r\n    EXCEPTION WHEN OTHERS THEN\r\n        RETURN '❌ ERROR AL INSERTAR: ' || SQLERRM;\r\n    END;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "verificar_permisos_usuario",
+    "routine_definition": "\r\nDECLARE\r\n    user_exists BOOLEAN;\r\n    can_update BOOLEAN;\r\nBEGIN\r\n    -- Verificar si el usuario existe\r\n    SELECT EXISTS(\r\n        SELECT 1 FROM public.users_profiles \r\n        WHERE id = '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid\r\n    ) INTO user_exists;\r\n    \r\n    IF NOT user_exists THEN\r\n        RETURN '❌ USUARIO NO EXISTE EN LA BASE DE DATOS';\r\n    END IF;\r\n    \r\n    -- Intentar actualización simple\r\n    BEGIN\r\n        UPDATE public.users_profiles \r\n        SET updated_at = NOW()\r\n        WHERE id = '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid;\r\n        \r\n        can_update := FOUND;\r\n    EXCEPTION WHEN OTHERS THEN\r\n        can_update := FALSE;\r\n    END;\r\n    \r\n    IF can_update THEN\r\n        RETURN '✅ PERMISOS DE ACTUALIZACIÓN CORRECTOS';\r\n    ELSE\r\n        RETURN '❌ NO HAY PERMISOS PARA ACTUALIZAR';\r\n    END IF;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "should_show_chat_button",
+    "routine_definition": "\r\nDECLARE\r\n    reserva_record RECORD;\r\n    dias_transcurridos INTEGER;\r\nBEGIN\r\n    -- Obtener información de la reserva\r\n    SELECT \r\n        r.id,\r\n        r.fecha_fin,\r\n        r.estado,\r\n        r.viajero_id,\r\n        p.anfitrion_id\r\n    INTO reserva_record\r\n    FROM reservas r\r\n    INNER JOIN propiedades p ON r.propiedad_id = p.id\r\n    WHERE r.id = reserva_uuid\r\n    AND (r.viajero_id = user_uuid OR p.anfitrion_id = user_uuid);\r\n    \r\n    -- Si no se encuentra la reserva o el usuario no es parte de ella\r\n    IF NOT FOUND THEN\r\n        RETURN FALSE;\r\n    END IF;\r\n    \r\n    -- Si la reserva está vigente (no ha terminado), siempre mostrar chat\r\n    IF reserva_record.fecha_fin >= NOW()::date THEN\r\n        RETURN TRUE;\r\n    END IF;\r\n    \r\n    -- Para reservas pasadas, calcular días transcurridos\r\n    dias_transcurridos := EXTRACT(DAY FROM NOW()::date - reserva_record.fecha_fin);\r\n    \r\n    -- Mostrar chat solo si han pasado menos de 5 días\r\n    RETURN dias_transcurridos < 5;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "can_review_traveler",
+    "routine_definition": "\r\nBEGIN\r\n    RETURN EXISTS (\r\n        SELECT 1 \r\n        FROM public.reservas r\r\n        JOIN public.propiedades p ON r.propiedad_id = p.id\r\n        WHERE r.id = reserva_uuid\r\n        AND p.anfitrion_id = anfitrion_uuid\r\n        AND (r.estado = 'completada' OR r.fecha_fin < NOW()::date)\r\n        AND NOT EXISTS (\r\n            SELECT 1 FROM public.resenas_viajeros rv\r\n            WHERE rv.reserva_id = reserva_uuid \r\n            AND rv.anfitrion_id = anfitrion_uuid\r\n        )\r\n    );\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "get_user_review_statistics",
+    "routine_definition": "\r\nBEGIN\r\n    RETURN QUERY\r\n    WITH stats_propiedades AS (\r\n        SELECT \r\n            COUNT(*)::integer as total_prop,\r\n            COALESCE(AVG(r.calificacion), 0)::numeric as promedio_prop,\r\n            jsonb_build_object(\r\n                '1', COUNT(*) FILTER (WHERE r.calificacion >= 1 AND r.calificacion < 2),\r\n                '2', COUNT(*) FILTER (WHERE r.calificacion >= 2 AND r.calificacion < 3),\r\n                '3', COUNT(*) FILTER (WHERE r.calificacion >= 3 AND r.calificacion < 4),\r\n                '4', COUNT(*) FILTER (WHERE r.calificacion >= 4 AND r.calificacion < 5),\r\n                '5', COUNT(*) FILTER (WHERE r.calificacion = 5)\r\n            ) as dist_prop\r\n        FROM resenas r\r\n        JOIN propiedades p ON r.propiedad_id = p.id\r\n        WHERE p.anfitrion_id = user_uuid\r\n    ),\r\n    stats_viajero AS (\r\n        SELECT \r\n            COUNT(*)::integer as total_viaj,\r\n            COALESCE(AVG(rv.calificacion), 0)::numeric as promedio_viaj,\r\n            jsonb_build_object(\r\n                '1', COUNT(*) FILTER (WHERE rv.calificacion >= 1 AND rv.calificacion < 2),\r\n                '2', COUNT(*) FILTER (WHERE rv.calificacion >= 2 AND rv.calificacion < 3),\r\n                '3', COUNT(*) FILTER (WHERE rv.calificacion >= 3 AND rv.calificacion < 4),\r\n                '4', COUNT(*) FILTER (WHERE rv.calificacion >= 4 AND rv.calificacion < 5),\r\n                '5', COUNT(*) FILTER (WHERE rv.calificacion = 5)\r\n            ) as dist_viaj\r\n        FROM resenas_viajeros rv\r\n        WHERE rv.viajero_id = user_uuid\r\n    ),\r\n    stats_hechas AS (\r\n        SELECT \r\n            (SELECT COUNT(*)::integer FROM resenas WHERE viajero_id = user_uuid) as hechas_prop,\r\n            (SELECT COUNT(*)::integer FROM resenas_viajeros WHERE anfitrion_id = user_uuid) as hechas_viaj\r\n    )\r\n    SELECT \r\n        COALESCE(sp.total_prop, 0),\r\n        COALESCE(sp.promedio_prop, 0),\r\n        COALESCE(sp.dist_prop, '{}'::jsonb),\r\n        COALESCE(sv.total_viaj, 0),\r\n        COALESCE(sv.promedio_viaj, 0),\r\n        COALESCE(sv.dist_viaj, '{}'::jsonb),\r\n        COALESCE(sh.hechas_prop, 0),\r\n        COALESCE(sh.hechas_viaj, 0)\r\n    FROM stats_propiedades sp\r\n    FULL OUTER JOIN stats_viajero sv ON true\r\n    FULL OUTER JOIN stats_hechas sh ON true;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "trigger_generar_codigo_verificacion",
+    "routine_definition": "\r\nBEGIN\r\n    -- Solo generar código cuando el estado cambia a 'confirmada'\r\n    IF NEW.estado = 'confirmada' AND (OLD.estado IS NULL OR OLD.estado != 'confirmada') THEN\r\n        NEW.codigo_verificacion = generar_codigo_verificacion();\r\n    END IF;\r\n    RETURN NEW;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "generar_codigo_verificacion",
+    "routine_definition": "\r\nBEGIN\r\n    RETURN LPAD(FLOOR(RANDOM() * 1000000)::TEXT, 6, '0');\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "notify_new_message",
+    "routine_definition": "\r\nDECLARE\r\n  sender_name TEXT;\r\n  receiver_id UUID;\r\n  anfitrion_id UUID;\r\n  viajero_id UUID;\r\n  propiedad_name TEXT;\r\nBEGIN\r\n  -- Obtener información de la reserva y propiedad (CORREGIDO)\r\n  SELECT \r\n    r.viajero_id,\r\n    p.anfitrion_id,\r\n    p.titulo \r\n  INTO viajero_id, anfitrion_id, propiedad_name \r\n  FROM reservas r \r\n  JOIN propiedades p ON p.id = r.propiedad_id \r\n  WHERE r.id = NEW.reserva_id;\r\n  \r\n  -- Verificar que encontramos la información\r\n  IF viajero_id IS NULL OR anfitrion_id IS NULL THEN\r\n    RAISE WARNING 'No se encontró información de reserva para reserva_id: %', NEW.reserva_id;\r\n    RETURN NEW;\r\n  END IF;\r\n  \r\n  -- Obtener nombre del remitente\r\n  SELECT nombre INTO sender_name FROM users_profiles WHERE id = NEW.remitente_id;\r\n  \r\n  -- Determinar el receptor (el otro participante en la conversación)\r\n  IF NEW.remitente_id = anfitrion_id THEN\r\n    -- El anfitrión envió el mensaje, notificar al viajero\r\n    receiver_id := viajero_id;\r\n  ELSIF NEW.remitente_id = viajero_id THEN\r\n    -- El viajero envió el mensaje, notificar al anfitrión\r\n    receiver_id := anfitrion_id;\r\n  ELSE\r\n    -- El remitente no es parte de esta reserva\r\n    RAISE WARNING 'El remitente % no es parte de la reserva %', NEW.remitente_id, NEW.reserva_id;\r\n    RETURN NEW;\r\n  END IF;\r\n  \r\n  -- Crear notificación para el receptor\r\n  IF receiver_id IS NOT NULL THEN\r\n    PERFORM create_notification(\r\n      receiver_id,\r\n      'new_message',\r\n      'Nuevo mensaje',\r\n      'Nuevo mensaje de ' || COALESCE(sender_name, 'un usuario') || ' sobre tu reserva en ' || COALESCE(propiedad_name, 'la propiedad'),\r\n      jsonb_build_object(\r\n        'reservation_id', NEW.reserva_id,\r\n        'sender_id', NEW.remitente_id,\r\n        'message_id', NEW.id,\r\n        'property_id', (SELECT propiedad_id FROM reservas WHERE id = NEW.reserva_id)\r\n      )\r\n    );\r\n    \r\n    -- Log para debugging\r\n    RAISE NOTICE 'Notificación creada para usuario % por mensaje de %', receiver_id, COALESCE(sender_name, 'usuario desconocido');\r\n  END IF;\r\n  \r\n  RETURN NEW;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "update_fcm_token",
+    "routine_definition": "\r\nDECLARE\r\n    rows_affected INTEGER;\r\nBEGIN\r\n    -- Intentar actualizar el token\r\n    UPDATE public.users_profiles \r\n    SET fcm_token = new_token, updated_at = NOW()\r\n    WHERE id = user_id;\r\n    \r\n    GET DIAGNOSTICS rows_affected = ROW_COUNT;\r\n    \r\n    IF rows_affected > 0 THEN\r\n        RETURN TRUE;\r\n    ELSE\r\n        RETURN FALSE;\r\n    END IF;\r\n    \r\nEXCEPTION WHEN OTHERS THEN\r\n    -- Log del error\r\n    RAISE NOTICE 'Error al actualizar FCM token: %', SQLERRM;\r\n    RETURN FALSE;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "debug_fcm_token_status",
+    "routine_definition": "\r\nBEGIN\r\n    RETURN QUERY\r\n    -- Paso 1: Verificar usuario existe\r\n    SELECT \r\n        'Paso 1: Usuario existe'::TEXT,\r\n        CASE \r\n            WHEN EXISTS(SELECT 1 FROM public.users_profiles WHERE id = '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid)\r\n            THEN '✅ SÍ'\r\n            ELSE '❌ NO'\r\n        END::TEXT,\r\n        'Verificando si el usuario está en la base de datos'::TEXT\r\n    \r\n    UNION ALL\r\n    \r\n    -- Paso 2: Verificar RLS\r\n    SELECT \r\n        'Paso 2: RLS Status'::TEXT,\r\n        CASE \r\n            WHEN (SELECT rowsecurity FROM pg_tables WHERE tablename = 'users_profiles' AND schemaname = 'public')\r\n            THEN '❌ ACTIVADO'\r\n            ELSE '✅ DESACTIVADO'\r\n        END::TEXT,\r\n        'Row Level Security puede bloquear actualizaciones'::TEXT\r\n    \r\n    UNION ALL\r\n    \r\n    -- Paso 3: Verificar token actual\r\n    SELECT \r\n        'Paso 3: Token actual'::TEXT,\r\n        CASE \r\n            WHEN EXISTS(\r\n                SELECT 1 FROM public.users_profiles \r\n                WHERE id = '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid \r\n                AND fcm_token IS NOT NULL\r\n            ) THEN '✅ EXISTE'\r\n            ELSE '❌ NULL'\r\n        END::TEXT,\r\n        COALESCE(\r\n            (SELECT LEFT(fcm_token, 30) || '...' FROM public.users_profiles WHERE id = '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid),\r\n            'No hay token'\r\n        )::TEXT\r\n    \r\n    UNION ALL\r\n    \r\n    -- Paso 4: Probar actualización\r\n    SELECT \r\n        'Paso 4: Prueba actualización'::TEXT,\r\n        CASE \r\n            WHEN update_fcm_token('0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid, 'test_token_' || EXTRACT(EPOCH FROM NOW())::text)\r\n            THEN '✅ FUNCIONA'\r\n            ELSE '❌ FALLA'\r\n        END::TEXT,\r\n        'Probando si se puede actualizar el token'::TEXT;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "test_supabase_config",
+    "routine_definition": "\r\nBEGIN\r\n    RETURN QUERY\r\n    SELECT \r\n        'supabase_url'::TEXT,\r\n        COALESCE(current_setting('app.supabase_url', true), 'NO CONFIGURADO')::TEXT,\r\n        CASE \r\n            WHEN current_setting('app.supabase_url', true) IS NOT NULL THEN '✅ OK'\r\n            ELSE '❌ FALTA'\r\n        END::TEXT\r\n    UNION ALL\r\n    SELECT \r\n        'supabase_anon_key'::TEXT,\r\n        CASE \r\n            WHEN current_setting('app.supabase_anon_key', true) IS NOT NULL \r\n            THEN LEFT(current_setting('app.supabase_anon_key', true), 20) || '...'\r\n            ELSE 'NO CONFIGURADO'\r\n        END::TEXT,\r\n        CASE \r\n            WHEN current_setting('app.supabase_anon_key', true) IS NOT NULL THEN '✅ OK'\r\n            ELSE '❌ FALTA'\r\n        END::TEXT;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "configure_supabase_settings",
+    "routine_definition": "\r\nBEGIN\r\n    -- Configurar URL de Supabase\r\n    PERFORM set_config('app.supabase_url', p_supabase_url, false);\r\n    \r\n    -- Configurar Anon Key\r\n    PERFORM set_config('app.supabase_anon_key', p_anon_key, false);\r\n    \r\n    RETURN '✅ Configuración guardada exitosamente';\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "verificar_fcm_token_completo",
+    "routine_definition": "\r\nBEGIN\r\n    RETURN QUERY\r\n    -- Verificar RLS\r\n    SELECT \r\n        'RLS Status'::TEXT,\r\n        CASE \r\n            WHEN (SELECT rowsecurity FROM pg_tables WHERE tablename = 'users_profiles') \r\n            THEN '❌ ACTIVADO (problema)'\r\n            ELSE '✅ DESACTIVADO (correcto)'\r\n        END::TEXT,\r\n        'Row Level Security en users_profiles'::TEXT\r\n    \r\n    UNION ALL\r\n    \r\n    -- Verificar FCM token\r\n    SELECT \r\n        'FCM Token'::TEXT,\r\n        CASE \r\n            WHEN EXISTS(\r\n                SELECT 1 FROM public.users_profiles \r\n                WHERE id = '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid \r\n                AND fcm_token IS NOT NULL\r\n            ) THEN '✅ TOKEN EXISTE'\r\n            ELSE '❌ TOKEN FALTANTE'\r\n        END::TEXT,\r\n        COALESCE(\r\n            (SELECT LEFT(fcm_token, 30) || '...' \r\n             FROM public.users_profiles \r\n             WHERE id = '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid),\r\n            'NULL - Reinicia la app'\r\n        )::TEXT\r\n    \r\n    UNION ALL\r\n    \r\n    -- Verificar device_tokens\r\n    SELECT \r\n        'Device Tokens'::TEXT,\r\n        CASE \r\n            WHEN EXISTS(\r\n                SELECT 1 FROM public.device_tokens \r\n                WHERE user_id = '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid\r\n            ) THEN '✅ TOKENS EXISTEN'\r\n            ELSE '❌ NO HAY TOKENS'\r\n        END::TEXT,\r\n        COALESCE(\r\n            (SELECT COUNT(*)::TEXT || ' tokens registrados' \r\n             FROM public.device_tokens \r\n             WHERE user_id = '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid),\r\n            '0 tokens'\r\n        )::TEXT;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "get_block_reason",
+    "routine_definition": "\r\n  SELECT \r\n    al.reason,\r\n    al.created_at\r\n  FROM admin_audit_log al\r\n  WHERE al.target_user_id = user_id\r\n    AND al.action_type = 'block_account'\r\n    AND al.was_successful = true\r\n  ORDER BY al.created_at DESC\r\n  LIMIT 1;\r\n"
+  },
+  {
+    "routine_name": "insertar_token_prueba",
+    "routine_definition": "\r\nDECLARE\r\n    test_token TEXT;\r\n    resultado TEXT;\r\nBEGIN\r\n    -- Generar token de prueba\r\n    test_token := 'test_fcm_token_' || EXTRACT(EPOCH FROM NOW())::text;\r\n    \r\n    BEGIN\r\n        -- Intentar insertar en users_profiles\r\n        UPDATE public.users_profiles \r\n        SET fcm_token = test_token\r\n        WHERE id = '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid;\r\n        \r\n        IF FOUND THEN\r\n            resultado := '✅ Token insertado en users_profiles: ' || test_token;\r\n        ELSE\r\n            resultado := '❌ No se pudo insertar en users_profiles';\r\n        END IF;\r\n        \r\n        -- También insertar en device_tokens\r\n        INSERT INTO public.device_tokens (user_id, token, platform)\r\n        VALUES ('0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid, test_token, 'android');\r\n        \r\n        resultado := resultado || ' | ✅ Token insertado en device_tokens';\r\n        \r\n        RETURN resultado;\r\n        \r\n    EXCEPTION WHEN OTHERS THEN\r\n        RETURN '❌ Error al insertar token: ' || SQLERRM;\r\n    END;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "enviar_notificaciones_prueba_bandeja",
+    "routine_definition": "\r\nBEGIN\r\n    -- Notificación 1: Prueba básica\r\n    INSERT INTO public.notifications (user_id, type, title, message, is_read) \r\n    VALUES (\r\n        '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid, \r\n        'general', \r\n        'Notificación 1 🔔', \r\n        'Primera prueba - Cierra la app y revisa la bandeja', \r\n        FALSE\r\n    );\r\n    \r\n    -- Esperar 2 segundos\r\n    PERFORM pg_sleep(2);\r\n    \r\n    -- Notificación 2: Prueba con emoji\r\n    INSERT INTO public.notifications (user_id, type, title, message, is_read) \r\n    VALUES (\r\n        '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid, \r\n        'reserva_confirmada', \r\n        'Reserva Confirmada ✅', \r\n        'Tu reserva ha sido confirmada exitosamente', \r\n        FALSE\r\n    );\r\n    \r\n    -- Esperar 2 segundos\r\n    PERFORM pg_sleep(2);\r\n    \r\n    -- Notificación 3: Prueba de mensaje\r\n    INSERT INTO public.notifications (user_id, type, title, message, is_read) \r\n    VALUES (\r\n        '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid, \r\n        'nuevo_mensaje', \r\n        'Nuevo Mensaje 💬', \r\n        'Tienes un nuevo mensaje de tu anfitrión', \r\n        FALSE\r\n    );\r\n    \r\n    RETURN '✅ 3 notificaciones enviadas - Cierra la app y revisa tu bandeja del sistema';\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "asignar_codigo_verificacion",
+    "routine_definition": "\r\nBEGIN\r\n    -- Si el estado cambia a 'confirmada' y no tiene código\r\n    IF NEW.estado = 'confirmada' AND (OLD.codigo_verificacion IS NULL OR OLD.codigo_verificacion = '') THEN\r\n        NEW.codigo_verificacion = generar_codigo_verificacion();\r\n    END IF;\r\n    RETURN NEW;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "save_user_fcm_token",
+    "routine_definition": "\r\nDECLARE\r\n    rows_affected INTEGER;\r\nBEGIN\r\n    -- Validar que el token no esté vacío y sea suficientemente largo\r\n    IF new_token IS NULL OR LENGTH(TRIM(new_token)) < 50 THEN\r\n        RETURN FALSE;\r\n    END IF;\r\n    \r\n    -- Actualizar el token para el usuario específico\r\n    UPDATE public.users_profiles \r\n    SET \r\n        fcm_token = new_token,\r\n        updated_at = NOW()\r\n    WHERE id = user_uuid;\r\n    \r\n    GET DIAGNOSTICS rows_affected = ROW_COUNT;\r\n    \r\n    RETURN rows_affected > 0;\r\n    \r\nEXCEPTION WHEN OTHERS THEN\r\n    RETURN FALSE;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "get_user_fcm_token",
+    "routine_definition": "\r\nDECLARE\r\n    user_token TEXT;\r\nBEGIN\r\n    SELECT fcm_token INTO user_token\r\n    FROM public.users_profiles \r\n    WHERE id = user_uuid;\r\n    \r\n    RETURN user_token;\r\n    \r\nEXCEPTION WHEN OTHERS THEN\r\n    RETURN NULL;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "get_app_config",
+    "routine_definition": "\r\nDECLARE\r\n    config_value TEXT;\r\nBEGIN\r\n    SELECT value INTO config_value \r\n    FROM public.app_config \r\n    WHERE key = config_key;\r\n    \r\n    RETURN config_value;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "send_push_notification",
+    "routine_definition": "\r\nDECLARE\r\n  notification_settings RECORD;\r\n  active_tokens_count INTEGER;\r\nBEGIN\r\n  -- Verificar si el usuario tiene push notifications habilitadas\r\n  SELECT push_notifications_enabled INTO notification_settings\r\n  FROM notification_settings \r\n  WHERE user_id = p_user_id;\r\n  \r\n  -- Si no tiene configuración o están habilitadas\r\n  IF notification_settings IS NULL OR notification_settings.push_notifications_enabled THEN\r\n    -- Verificar si el usuario tiene tokens activos\r\n    SELECT COUNT(*) INTO active_tokens_count\r\n    FROM device_tokens \r\n    WHERE user_id = p_user_id AND is_active = TRUE;\r\n    \r\n    IF active_tokens_count > 0 THEN\r\n      -- Aquí se llamaría a la Edge Function para enviar push notifications\r\n      -- Por ahora solo registramos que se intentó enviar\r\n      RAISE NOTICE 'Push notification would be sent to user % with % active tokens', p_user_id, active_tokens_count;\r\n      RETURN TRUE;\r\n    END IF;\r\n  END IF;\r\n  \r\n  RETURN FALSE;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "log_fcm_token_changes",
+    "routine_definition": "\r\nBEGIN\r\n    IF OLD.fcm_token IS DISTINCT FROM NEW.fcm_token THEN\r\n        RAISE NOTICE 'Token FCM actualizado para usuario %: %', \r\n            NEW.email, \r\n            CASE \r\n                WHEN NEW.fcm_token IS NOT NULL THEN 'Token guardado ✅'\r\n                ELSE 'Token eliminado ❌'\r\n            END;\r\n    END IF;\r\n    RETURN NEW;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "send_push_notification_v2",
+    "routine_definition": "\r\nDECLARE\r\n    user_fcm_token TEXT;\r\n    notification_settings RECORD;\r\n    http_request_id BIGINT;\r\n    supabase_url TEXT;\r\n    supabase_anon_key TEXT;\r\nBEGIN\r\n    -- Obtener configuración\r\n    supabase_url := get_app_config('supabase_url');\r\n    supabase_anon_key := get_app_config('supabase_anon_key');\r\n    \r\n    -- Verificar configuración\r\n    IF supabase_url IS NULL OR supabase_anon_key IS NULL THEN\r\n        INSERT INTO public.push_notification_queue (\r\n            user_id, fcm_token, title, body, status, error_message\r\n        ) VALUES (\r\n            p_user_id, 'no_config', p_title, p_body, 'failed', \r\n            'Configuración de Supabase faltante'\r\n        );\r\n        RETURN FALSE;\r\n    END IF;\r\n    \r\n    -- Verificar configuración de notificaciones\r\n    SELECT * INTO notification_settings \r\n    FROM public.notification_settings \r\n    WHERE user_id = p_user_id;\r\n    \r\n    IF notification_settings IS NULL OR NOT notification_settings.push_notifications_enabled THEN\r\n        RETURN FALSE;\r\n    END IF;\r\n    \r\n    -- Obtener FCM token\r\n    SELECT fcm_token INTO user_fcm_token\r\n    FROM public.users_profiles \r\n    WHERE id = p_user_id AND fcm_token IS NOT NULL;\r\n    \r\n    IF user_fcm_token IS NULL THEN\r\n        INSERT INTO public.push_notification_queue (\r\n            user_id, fcm_token, title, body, status, error_message\r\n        ) VALUES (\r\n            p_user_id, 'no_token', p_title, p_body, 'failed', \r\n            'FCM token no encontrado'\r\n        );\r\n        RETURN FALSE;\r\n    END IF;\r\n    \r\n    -- Llamar a Edge Function\r\n    BEGIN\r\n        SELECT net.http_post(\r\n            url := supabase_url || '/functions/v1/send-push-notification',\r\n            headers := jsonb_build_object(\r\n                'Content-Type', 'application/json',\r\n                'Authorization', 'Bearer ' || supabase_anon_key\r\n            ),\r\n            body := jsonb_build_object(\r\n                'fcm_token', user_fcm_token,\r\n                'title', p_title,\r\n                'body', p_body\r\n            )\r\n        ) INTO http_request_id;\r\n        \r\n        -- Registrar como enviado\r\n        INSERT INTO public.push_notification_queue (\r\n            user_id, fcm_token, title, body, status, sent_at\r\n        ) VALUES (\r\n            p_user_id, user_fcm_token, p_title, p_body, 'sent', NOW()\r\n        );\r\n        \r\n        RETURN TRUE;\r\n        \r\n    EXCEPTION WHEN OTHERS THEN\r\n        -- Registrar error\r\n        INSERT INTO public.push_notification_queue (\r\n            user_id, fcm_token, title, body, status, error_message\r\n        ) VALUES (\r\n            p_user_id, user_fcm_token, p_title, p_body, 'failed', SQLERRM\r\n        );\r\n        \r\n        RETURN FALSE;\r\n    END;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "calcular_promedio_aspectos",
+    "routine_definition": "\r\nDECLARE\r\n    suma integer := 0;\r\n    contador integer := 0;\r\n    aspecto_valor integer;\r\n    promedio numeric;\r\nBEGIN\r\n    IF aspectos_json IS NULL THEN\r\n        RETURN 1.0;\r\n    END IF;\r\n    \r\n    -- Iterar sobre todos los aspectos en el JSON\r\n    FOR aspecto_valor IN \r\n        SELECT value::integer \r\n        FROM jsonb_each_text(aspectos_json) \r\n        WHERE value IS NOT NULL AND value != 'null' AND value ~ '^[0-9]+$'\r\n    LOOP\r\n        suma := suma + aspecto_valor;\r\n        contador := contador + 1;\r\n    END LOOP;\r\n    \r\n    -- Si no hay aspectos, devolver 1\r\n    IF contador = 0 THEN\r\n        RETURN 1.0;\r\n    END IF;\r\n    \r\n    -- Calcular promedio exacto (sin redondear)\r\n    promedio := suma::numeric / contador::numeric;\r\n    \r\n    -- Asegurar que esté entre 1.0 y 5.0\r\n    RETURN GREATEST(1.0, LEAST(5.0, promedio));\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "trigger_calcular_calificacion_viajero",
+    "routine_definition": "\r\nBEGIN\r\n    -- Si hay aspectos, calcular la calificación automáticamente\r\n    IF NEW.aspectos IS NOT NULL THEN\r\n        NEW.calificacion := calcular_promedio_aspectos(NEW.aspectos);\r\n    END IF;\r\n    \r\n    RETURN NEW;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "http_set_curlopt",
+    "routine_definition": null
+  },
+  {
+    "routine_name": "http_reset_curlopt",
+    "routine_definition": null
+  },
+  {
+    "routine_name": "http_list_curlopt",
+    "routine_definition": null
+  },
+  {
+    "routine_name": "http_header",
+    "routine_definition": null
+  },
+  {
+    "routine_name": "http",
+    "routine_definition": null
+  },
+  {
+    "routine_name": "http_get",
+    "routine_definition": null
+  },
+  {
+    "routine_name": "trigger_calcular_calificacion_propiedad",
+    "routine_definition": "\r\nBEGIN\r\n    -- Si hay aspectos, calcular la calificación automáticamente\r\n    IF NEW.aspectos IS NOT NULL THEN\r\n        NEW.calificacion := calcular_promedio_aspectos_propiedades(NEW.aspectos);\r\n    END IF;\r\n    \r\n    RETURN NEW;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "http_post",
+    "routine_definition": null
+  },
+  {
+    "routine_name": "http_put",
+    "routine_definition": null
+  },
+  {
+    "routine_name": "http_patch",
+    "routine_definition": null
+  },
+  {
+    "routine_name": "http_delete",
+    "routine_definition": null
+  },
+  {
+    "routine_name": "http_delete",
+    "routine_definition": null
+  },
+  {
+    "routine_name": "http_head",
+    "routine_definition": null
+  },
+  {
+    "routine_name": "cleanup_old_notifications",
+    "routine_definition": "\r\nBEGIN\r\n  -- Eliminar notificaciones de más de 30 días\r\n  DELETE FROM notifications \r\n  WHERE created_at < NOW() - INTERVAL '30 days';\r\n  \r\n  -- Eliminar tokens inactivos de más de 30 días\r\n  DELETE FROM device_tokens \r\n  WHERE is_active = FALSE \r\n    AND updated_at < NOW() - INTERVAL '30 days';\r\n    \r\n  RAISE NOTICE 'Cleaned up old notifications and inactive device tokens';\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "urlencode",
+    "routine_definition": null
+  },
+  {
+    "routine_name": "urlencode",
+    "routine_definition": null
+  },
+  {
+    "routine_name": "urlencode",
+    "routine_definition": null
+  },
+  {
+    "routine_name": "http_get",
+    "routine_definition": null
+  },
+  {
+    "routine_name": "http_post",
+    "routine_definition": null
+  },
+  {
+    "routine_name": "text_to_bytea",
+    "routine_definition": null
+  },
+  {
+    "routine_name": "bytea_to_text",
+    "routine_definition": null
+  },
+  {
+    "routine_name": "actualizar_fcm_token",
+    "routine_definition": "\r\nBEGIN\r\n    UPDATE users_profiles \r\n    SET fcm_token = p_fcm_token,\r\n        updated_at = NOW()\r\n    WHERE user_id = p_user_id;\r\n    \r\n    IF FOUND THEN\r\n        RAISE NOTICE 'Token FCM actualizado para usuario %', p_user_id;\r\n        RETURN TRUE;\r\n    ELSE\r\n        RAISE WARNING 'No se pudo actualizar token FCM para usuario %', p_user_id;\r\n        RETURN FALSE;\r\n    END IF;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "test_fcm_token_update",
+    "routine_definition": "\r\nDECLARE\r\n    current_user_id UUID;\r\n    update_result INTEGER;\r\nBEGIN\r\n    -- Obtener usuario actual\r\n    SELECT auth.uid() INTO current_user_id;\r\n    \r\n    IF current_user_id IS NULL THEN\r\n        RETURN '❌ Usuario no autenticado - RLS bloqueará la operación';\r\n    END IF;\r\n    \r\n    -- Intentar actualizar FCM token\r\n    UPDATE public.users_profiles \r\n    SET fcm_token = 'test_token_function_' || NOW()::text\r\n    WHERE id = current_user_id;\r\n    \r\n    GET DIAGNOSTICS update_result = ROW_COUNT;\r\n    \r\n    IF update_result > 0 THEN\r\n        RETURN '✅ FCM token actualizado exitosamente para usuario: ' || current_user_id::text;\r\n    ELSE\r\n        RETURN '❌ No se pudo actualizar FCM token - Verifica RLS policies';\r\n    END IF;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "simulate_flutter_fcm_update",
+    "routine_definition": "\r\nDECLARE\r\n    update_result INTEGER;\r\nBEGIN\r\n    -- Simular lo que hace Flutter\r\n    UPDATE public.users_profiles \r\n    SET fcm_token = p_fcm_token,\r\n        updated_at = NOW()\r\n    WHERE id = p_user_id;\r\n    \r\n    GET DIAGNOSTICS update_result = ROW_COUNT;\r\n    \r\n    IF update_result > 0 THEN\r\n        RETURN '✅ Simulación exitosa - FCM token actualizado';\r\n    ELSE\r\n        RETURN '❌ Simulación falló - Usuario no encontrado o RLS bloqueó';\r\n    END IF;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "crear_notificacion_mensaje",
+    "routine_definition": "\r\nDECLARE\r\n    receptor_id UUID;\r\n    remitente_nombre TEXT;\r\n    anfitrion_id UUID;\r\n    viajero_id UUID;\r\n    propiedad_titulo TEXT;\r\nBEGIN\r\n    -- Obtener información de la reserva\r\n    SELECT \r\n        r.viajero_id,\r\n        p.anfitrion_id,\r\n        p.titulo\r\n    INTO \r\n        viajero_id,\r\n        anfitrion_id,\r\n        propiedad_titulo\r\n    FROM reservas r\r\n    INNER JOIN propiedades p ON r.propiedad_id = p.id\r\n    WHERE r.id = NEW.reserva_id;\r\n    \r\n    -- Si no encontramos la reserva, salir sin error\r\n    IF viajero_id IS NULL OR anfitrion_id IS NULL THEN\r\n        RETURN NEW;\r\n    END IF;\r\n    \r\n    -- Determinar el receptor\r\n    IF NEW.remitente_id = viajero_id THEN\r\n        receptor_id := anfitrion_id;\r\n    ELSIF NEW.remitente_id = anfitrion_id THEN\r\n        receptor_id := viajero_id;\r\n    ELSE\r\n        RETURN NEW;\r\n    END IF;\r\n    \r\n    -- Obtener nombre del remitente\r\n    SELECT nombre INTO remitente_nombre\r\n    FROM users_profiles\r\n    WHERE id = NEW.remitente_id;\r\n    \r\n    -- Crear notificación\r\n    INSERT INTO public.notifications (\r\n        user_id,\r\n        type,\r\n        title,\r\n        message,\r\n        metadata,\r\n        is_read,\r\n        created_at\r\n    ) VALUES (\r\n        receptor_id,\r\n        'nuevo_mensaje',\r\n        COALESCE(remitente_nombre, 'Usuario') || ' te ha enviado un mensaje',\r\n        CASE \r\n            WHEN LENGTH(NEW.mensaje) > 80 THEN LEFT(NEW.mensaje, 80) || '...'\r\n            ELSE NEW.mensaje\r\n        END,\r\n        jsonb_build_object(\r\n            'reserva_id', NEW.reserva_id,\r\n            'mensaje_id', NEW.id,\r\n            'remitente_id', NEW.remitente_id\r\n        ),\r\n        false,\r\n        NOW()\r\n    );\r\n    \r\n    RETURN NEW;\r\n    \r\nEXCEPTION WHEN OTHERS THEN\r\n    RETURN NEW;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "update_updated_at_column",
+    "routine_definition": "\r\nBEGIN\r\n  NEW.updated_at = NOW();\r\n  RETURN NEW;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "test_push_system_complete",
+    "routine_definition": "\r\nDECLARE\r\n    config_ok BOOLEAN := FALSE;\r\n    token_ok BOOLEAN := FALSE;\r\n    push_result BOOLEAN := FALSE;\r\n    current_token TEXT;\r\nBEGIN\r\n    -- Verificar configuración\r\n    IF get_app_config('supabase_url') IS NOT NULL \r\n       AND get_app_config('supabase_anon_key') IS NOT NULL THEN\r\n        config_ok := TRUE;\r\n    END IF;\r\n    \r\n    -- Verificar FCM token\r\n    SELECT fcm_token INTO current_token\r\n    FROM public.users_profiles \r\n    WHERE id = '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid;\r\n    \r\n    IF current_token IS NOT NULL THEN\r\n        token_ok := TRUE;\r\n    END IF;\r\n    \r\n    -- Probar envío de push\r\n    IF config_ok AND token_ok THEN\r\n        SELECT send_push_notification_v2(\r\n            '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid,\r\n            'Sistema Push Activado 🚀',\r\n            'Si recibes esto, las notificaciones push funcionan perfectamente'\r\n        ) INTO push_result;\r\n    END IF;\r\n    \r\n    -- Retornar resultado detallado\r\n    IF config_ok AND token_ok AND push_result THEN\r\n        RETURN '🎉 SISTEMA PUSH COMPLETAMENTE FUNCIONAL - Revisa tu celular en 10 segundos';\r\n    ELSIF NOT config_ok THEN\r\n        RETURN '❌ Configuración faltante: ' || \r\n               CASE WHEN get_app_config('supabase_url') IS NULL THEN 'URL ' ELSE '' END ||\r\n               CASE WHEN get_app_config('supabase_anon_key') IS NULL THEN 'KEY ' ELSE '' END;\r\n    ELSIF NOT token_ok THEN\r\n        RETURN '❌ FCM Token faltante - Token actual: ' || COALESCE(current_token, 'NULL');\r\n    ELSE\r\n        RETURN '❌ Error al enviar push - Verifica Edge Function';\r\n    END IF;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "verificar_app_reinstalada",
+    "routine_definition": "\r\nBEGIN\r\n    RETURN QUERY\r\n    -- Verificar FCM token\r\n    SELECT \r\n        'FCM Token'::TEXT,\r\n        CASE \r\n            WHEN EXISTS(\r\n                SELECT 1 FROM public.users_profiles \r\n                WHERE id = '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid \r\n                AND fcm_token IS NOT NULL\r\n            ) THEN '✅ GENERADO'\r\n            ELSE '❌ FALTANTE - Abre la app'\r\n        END::TEXT,\r\n        COALESCE(\r\n            (SELECT LEFT(fcm_token, 30) || '...' \r\n             FROM public.users_profiles \r\n             WHERE id = '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid),\r\n            'NULL - La app debe generar uno nuevo'\r\n        )::TEXT\r\n    \r\n    UNION ALL\r\n    \r\n    -- Verificar configuración\r\n    SELECT \r\n        'Configuración'::TEXT,\r\n        CASE \r\n            WHEN get_app_config('supabase_url') IS NOT NULL \r\n                 AND get_app_config('supabase_anon_key') IS NOT NULL \r\n            THEN '✅ CONFIGURADO'\r\n            ELSE '❌ FALTANTE'\r\n        END::TEXT,\r\n        'URL y anon key para Edge Function'::TEXT;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "crear_resena_viajero_segura",
+    "routine_definition": "\r\nDECLARE\r\n    nueva_resena_id UUID;\r\n    aspectos_default JSONB;\r\nBEGIN\r\n    -- Validar calificación\r\n    IF p_calificacion < 1.0 OR p_calificacion > 5.0 THEN\r\n        RAISE EXCEPTION 'La calificación debe estar entre 1.0 y 5.0';\r\n    END IF;\r\n    \r\n    -- Establecer aspectos por defecto para viajeros\r\n    IF p_aspectos IS NULL THEN\r\n        aspectos_default := '{\r\n            \"limpieza\": null,\r\n            \"puntualidad\": null,\r\n            \"comunicacion\": null,\r\n            \"respeto_normas\": null,\r\n            \"cuidado_propiedad\": null\r\n        }'::jsonb;\r\n    ELSE\r\n        aspectos_default := p_aspectos;\r\n    END IF;\r\n    \r\n    -- Insertar reseña de viajero\r\n    INSERT INTO public.resenas_viajeros (\r\n        viajero_id,\r\n        anfitrion_id,\r\n        reserva_id,\r\n        calificacion,\r\n        comentario,\r\n        aspectos,\r\n        created_at\r\n    ) VALUES (\r\n        p_viajero_id,\r\n        p_anfitrion_id,\r\n        p_reserva_id,\r\n        p_calificacion,\r\n        p_comentario,\r\n        aspectos_default,\r\n        NOW()\r\n    ) RETURNING id INTO nueva_resena_id;\r\n    \r\n    RETURN nueva_resena_id;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "crear_perfil_usuario_automatico",
+    "routine_definition": "\r\nBEGIN\r\n  -- Insertar el perfil del usuario en la tabla users_profiles\r\n  INSERT INTO public.users_profiles (id, email, nombre, email_verified)\r\n  VALUES (\r\n    NEW.id,\r\n    NEW.email,\r\n    COALESCE(NEW.raw_user_meta_data->>'nombre', 'Usuario'), -- Toma el nombre de los metadatos o usa 'Usuario'\r\n    false\r\n  );\r\n  \r\n  RETURN NEW;\r\nEND;\r\n"
+  },
+  {
+    "routine_name": "actualizar_updated_at",
+    "routine_definition": "\r\nBEGIN\r\n  NEW.updated_at = NOW();\r\n  RETURN NEW;\r\nEND;\r\n"
+  }
+]

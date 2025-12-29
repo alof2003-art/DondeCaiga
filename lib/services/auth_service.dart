@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../features/auth/data/models/user_registration_data.dart';
 import '../features/auth/data/repositories/user_repository.dart';
+import '../features/notificaciones/services/notifications_service.dart';
 import 'storage_service.dart';
 import '../core/utils/error_handler.dart';
 
@@ -215,6 +216,16 @@ class AuthService {
   /// Cierra la sesión del usuario actual
   Future<void> signOut() async {
     try {
+      // Limpiar token FCM antes de cerrar sesión
+      try {
+        await NotificationsService().clearData();
+      } catch (notificationError) {
+        // Si falla la limpieza de notificaciones, continuar con el logout
+        print(
+          '⚠️ Error al limpiar datos de notificaciones: $notificationError',
+        );
+      }
+
       await _supabase.auth.signOut();
     } catch (e) {
       ErrorHandler.logError(e);

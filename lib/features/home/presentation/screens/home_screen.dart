@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../main.dart';
 import '../../../../services/auth_service.dart';
 import '../../../../services/storage_service.dart';
 import '../../../auth/data/repositories/user_repository.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
 import '../../../../core/widgets/user_name_widget.dart';
-import '../../../notificaciones/utils/notificaciones_helper.dart';
-import '../../../notificaciones/services/simple_fcm_service.dart';
+import '../../../notificaciones/presentation/providers/notificaciones_provider.dart';
+import '../../../notificaciones/services/notifications_service.dart';
+import '../../../main/presentation/screens/main_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,6 +20,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late final AuthService _authService;
   String? _userEmail;
+  bool _isInitializing = true;
 
   @override
   void initState() {
@@ -27,40 +30,51 @@ class _HomeScreenState extends State<HomeScreen> {
       StorageService(supabase),
       UserRepository(supabase),
     );
-    _loadUserInfo();
+    _initializeApp();
   }
 
-  Future<void> _loadUserInfo() async {
-    final user = await _authService.getCurrentUser();
-    if (user != null) {
-      setState(() {
-        _userEmail = user.email;
-      });
+  Future<void> _initializeApp() async {
+    try {
+      final user = await _authService.getCurrentUser();
+      if (user != null && mounted) {
+        setState(() {
+          _userEmail = user.email;
+        });
 
-      // Inicializar notificaciones después del login
-      try {
-        debugPrint('🔔 Inicializando notificaciones para usuario logueado...');
+        // Inicializar servicio de notificaciones
+        final notificationsService = NotificationsService();
+        await notificationsService.initialize();
 
-        // Usar servicio simple para debuggear
-        await SimpleFCMService.initializeAndGetToken();
-
-        // También inicializar el sistema completo
+        // Inicializar provider de notificaciones
         if (mounted) {
-          await NotificacionesHelper.inicializarParaUsuario(context);
+          final notificacionesProvider = Provider.of<NotificacionesProvider>(
+            context,
+            listen: false,
+          );
+          await notificacionesProvider.inicializar();
+          debugPrint('✅ Sistema de notificaciones inicializado');
         }
 
-        debugPrint('✅ Notificaciones inicializadas correctamente');
-      } catch (e) {
-        debugPrint('❌ Error al inicializar notificaciones: $e');
+        // Navegar a la pantalla principal
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const MainScreen()),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Error al inicializar app: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isInitializing = false;
+        });
       }
     }
   }
 
   Future<void> _handleLogout() async {
     try {
-      // Limpiar notificaciones antes de cerrar sesión
-      NotificacionesHelper.limpiarNotificaciones(context);
-
       await _authService.signOut();
 
       if (!mounted) return;
@@ -83,6 +97,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isInitializing) {
+      return const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4DB6AC)),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Inicializando...',
+                style: TextStyle(fontSize: 16, color: Color(0xFF78909C)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Donde Caiga'),
@@ -128,36 +162,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               const SizedBox(height: 32),
               const Text(
-                'Has iniciado sesión exitosamente',
+                'Redirigiendo a la aplicación...',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18, color: Color(0xFF263238)),
               ),
               const SizedBox(height: 48),
-              // Botón de debug para FCM
               ElevatedButton.icon(
-                onPressed: () async {
-                  debugPrint('🔍 === INICIANDO DEBUG FCM ===');
-                  await SimpleFCMService.checkTokenStatus();
+                onPressed: () {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (_) => const MainScreen()),
+                  );
                 },
-                icon: const Icon(Icons.bug_report),
-                label: const Text('Debug FCM Token'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: _handleLogout,
-                icon: const Icon(Icons.logout),
-                label: const Text('Cerrar Sesión'),
+                icon: const Icon(Icons.arrow_forward),
+                label: const Text('Continuar'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF4DB6AC),
                   foregroundColor: Colors.white,

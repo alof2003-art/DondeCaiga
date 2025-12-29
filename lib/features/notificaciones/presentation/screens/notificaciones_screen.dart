@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/notificaciones_provider.dart';
 import '../widgets/notificacion_card.dart';
 import '../widgets/filtro_notificaciones.dart';
+import '../widgets/test_notifications_widget.dart';
 import '../../data/models/notificacion.dart';
 
 class NotificacionesScreen extends StatefulWidget {
@@ -19,7 +20,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
 
     // Cargar notificaciones al iniciar
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -43,6 +44,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen>
           tabs: const [
             Tab(text: 'Todas', icon: Icon(Icons.notifications)),
             Tab(text: 'Por Tipo', icon: Icon(Icons.category)),
+            Tab(text: 'Test FCM', icon: Icon(Icons.bug_report)),
           ],
         ),
         actions: [
@@ -96,7 +98,11 @@ class _NotificacionesScreenState extends State<NotificacionesScreen>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [_buildVistaTodasLasNotificaciones(), _buildVistaPorTipo()],
+        children: [
+          _buildVistaTodasLasNotificaciones(),
+          _buildVistaPorTipo(),
+          _buildVistaTestFCM(),
+        ],
       ),
     );
   }
@@ -260,6 +266,11 @@ class _NotificacionesScreenState extends State<NotificacionesScreen>
         );
       },
     );
+  }
+
+  /// 🧪 VISTA DE TEST FCM
+  Widget _buildVistaTestFCM() {
+    return const SingleChildScrollView(child: TestNotificationsWidget());
   }
 
   void _mostrarFiltro() {

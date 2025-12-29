@@ -1,0 +1,181 @@
+-- =====================================================
+-- SISTEMA SIMPLE PARA FCM TOKENS EN users_profiles.fcm_token ÚNICAMENTE
+-- NO usa device_tokens ni device_user_tokens (solo users_profiles)
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION actualizar_fcm_token_simple(
+    p_user_id UUID,
+    p_new_token TEXT
+) RETURNS TEXT AS $$
+DECLARE
+    old_token TEXT;
+    tokens_duplicados INTEGER;
+    usuarios_afectados TEXT[];
+BEGIN
+    -- Obtener token actual del usuario
+    SELECT fcm_token INTO old_token
+    FROM users_profiles 
+    WHERE id = p_user_id;
+    
+    -- Si el token no cambió, no hacer nada
+    IF old_token = p_new_token THEN
+        RETURN '✅ Token no cambió - No se requiere actualización';
+    END IF;
+    
+    -- Verificar si el nuevo token ya existe en otros usuarios
+    SELECT COUNT(*), ARRAY_AGG(email) INTO tokens_duplicados, usuarios_afectados
+    FROM users_profiles 
+    WHERE fcm_token = p_new_token AND id != p_user_id;
+    
+    -- Si hay tokens duplicados, limpiarlos PRIMERO
+    IF tokens_duplicados > 0 THEN
+        RAISE NOTICE 'Token duplicado encontrado en % usuarios: %', tokens_duplicados, usuarios_afectados;
+        
+        -- Limpiar token de otros usuarios (el token se reasignará al usuario actual)
+        UPDATE users_profiles 
+        SET fcm_token = NULL, updated_at = NOW()
+        WHERE fcm_token = p_new_token AND id != p_user_id;
+        
+        RAISE NOTICE 'Tokens duplicados limpiados de % usuarios', tokens_duplicados;
+    END IF;
+    
+    -- Actualizar token del usuario actual EN users_profiles SOLAMENTE
+    UPDATE users_profiles 
+    SET fcm_token = p_new_token, updated_at = NOW()
+    WHERE id = p_user_id;
+    
+    -- Retornar resultado
+    IF tokens_duplicados > 0 THEN
+        RETURN '✅ Token actualizado en users_profiles - ' || tokens_duplicados || ' tokens duplicados limpiados';
+    ELSE
+        RETURN '✅ Token actualizado correctamente en users_profiles';
+    END IF;
+    
+EXCEPTION WHEN OTHERS THEN
+    RETURN '❌ Error al actualizar token: ' || SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- TRIGGER AUTOMÁTICO PARA REEMPLAZO DE TOKENS FCM
+-- Solo trabaja con users_profiles.fcm_token
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION trigger_reemplazar_token_fcm_simple() RETURNS TRIGGER AS $$
+DECLARE
+    tokens_duplicados INTEGER;
+BEGIN
+    -- Solo procesar si el token FCM cambió
+    IF OLD.fcm_token IS DISTINCT FROM NEW.fcm_token AND NEW.fcm_token IS NOT NULL THEN
+        
+        -- Limpiar el mismo token de otros usuarios (el token del celular tiene prioridad)
+        UPDATE users_profiles 
+        SET fcm_token = NULL, updated_at = NOW()
+        WHERE fcm_token = NEW.fcm_token 
+        AND id != NEW.id;
+        
+        GET DIAGNOSTICS tokens_duplicados = ROW_COUNT;
+        
+        IF tokens_duplicados > 0 THEN
+            RAISE NOTICE '🔄 Token FCM reemplazado: % tokens duplicados limpiados para usuario %', 
+                tokens_duplicados, NEW.email;
+        ELSE
+            RAISE NOTICE '✅ Token FCM actualizado para usuario %', NEW.email;
+        END IF;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Crear el trigger en users_profiles
+DROP TRIGGER IF EXISTS trigger_reemplazar_token_fcm_simple ON users_profiles;
+CREATE TRIGGER trigger_reemplazar_token_fcm_simple
+    BEFORE UPDATE ON users_profiles
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_reemplazar_token_fcm_simple();
+
+-- =====================================================
+-- FUNCIÓN SIMPLE PARA FORZAR NUEVO TOKEN
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION forzar_nuevo_token_usuario(user_email TEXT) RETURNS TEXT AS $$
+DECLARE
+    target_user_id UUID;
+BEGIN
+    -- Buscar usuario por email
+    SELECT id INTO target_user_id
+    FROM users_profiles 
+    WHERE email = user_email;
+    
+    IF target_user_id IS NULL THEN
+        RETURN '❌ Usuario no encontrado: ' || user_email;
+    END IF;
+    
+    -- Limpiar token actual (forzar regeneración)
+    UPDATE users_profiles 
+    SET fcm_token = NULL, updated_at = NOW()
+    WHERE id = target_user_id;
+    
+    RETURN '✅ Token limpiado para ' || user_email || '. Debe cerrar y reabrir la app completamente para generar uno nuevo.';
+END;
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- FUNCIÓN PARA DIAGNOSTICAR TOKENS DUPLICADOS
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION diagnosticar_tokens_duplicados() RETURNS TABLE(
+    token_preview TEXT,
+    usuarios_count INTEGER,
+    usuarios_emails TEXT[]
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        LEFT(fcm_token, 30) || '...' as token_preview,
+        COUNT(*)::INTEGER as usuarios_count,
+        ARRAY_AGG(email) as usuarios_emails
+    FROM users_profiles 
+    WHERE fcm_token IS NOT NULL
+    GROUP BY fcm_token
+    HAVING COUNT(*) > 1
+    ORDER BY COUNT(*) DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- FUNCIÓN PARA LIMPIAR TOKENS ANTIGUOS
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION limpiar_tokens_antiguos() RETURNS TEXT AS $$
+DECLARE
+    tokens_limpiados INTEGER;
+BEGIN
+    -- Limpiar tokens de usuarios que no han usado la app en 30 días
+    UPDATE users_profiles 
+    SET fcm_token = NULL
+    WHERE fcm_token IS NOT NULL 
+    AND updated_at < NOW() - INTERVAL '30 days';
+    
+    GET DIAGNOSTICS tokens_limpiados = ROW_COUNT;
+    
+    RETURN '✅ Limpiados ' || tokens_limpiados || ' tokens antiguos (>30 días)';
+END;
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- PROBAR LAS FUNCIONES
+-- =====================================================
+
+-- Diagnosticar tokens duplicados actuales
+SELECT * FROM diagnosticar_tokens_duplicados();
+
+-- Forzar nuevo token para un usuario específico
+-- SELECT forzar_nuevo_token_usuario('alof2003@gmail.com');
+
+-- Probar actualización simple (cambiar por tu user_id real)
+-- SELECT actualizar_fcm_token_simple(
+--     '0dc7b2bc-04c7-430e-8725-19f6cdb55ee3'::uuid,
+--     'nuevo_token_de_prueba_' || NOW()::text
+-- );

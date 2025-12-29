@@ -203,8 +203,8 @@ class RatingVisualWidget extends StatelessWidget {
       }
 
       // Intentar con clave como int
-      if (distribucion.containsKey(estrella)) {
-        final valor = distribucion[estrella];
+      if (distribucion.containsKey(claveString)) {
+        final valor = distribucion[claveString];
         return _convertirAInt(valor);
       }
 

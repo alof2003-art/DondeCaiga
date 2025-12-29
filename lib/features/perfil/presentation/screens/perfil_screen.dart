@@ -12,6 +12,7 @@ import 'package:donde_caigav2/core/services/theme_service.dart';
 import 'package:donde_caigav2/features/resenas/data/repositories/resenas_repository.dart';
 import 'package:donde_caigav2/features/resenas/presentation/widgets/seccion_resenas_perfil.dart';
 import 'package:donde_caigav2/features/perfil/presentation/widgets/calificaciones_perfil_widget.dart';
+import 'package:donde_caigav2/features/notificaciones/services/notifications_service.dart';
 import 'configurar_perfil_screen.dart';
 
 class PerfilScreen extends StatefulWidget {
@@ -103,6 +104,84 @@ class _PerfilScreenState extends State<PerfilScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  Future<void> _debugNotifications() async {
+    try {
+      debugPrint('🔧 === DEBUG MANUAL DE NOTIFICACIONES MEJORADO ===');
+
+      final notificationsService = NotificationsService();
+
+      // PASO 1: Obtener información básica de debug
+      final debugInfo = await notificationsService.getTokenDebugInfo();
+      debugPrint('🔍 DEBUG INFO: $debugInfo');
+
+      // PASO 2: Obtener estadísticas de tokens
+      final stats = await notificationsService.getTokenStatistics();
+      debugPrint('📈 ESTADÍSTICAS: $stats');
+
+      // PASO 3: Obtener logs recientes del usuario
+      final logs = await notificationsService.getDebugLogs(limit: 10);
+      debugPrint('📋 LOGS RECIENTES (${logs.length}):');
+      for (final log in logs) {
+        debugPrint(
+          '  ${log['timestamp_log']}: ${log['action_type']} - ${log['success'] ? '✅' : '❌'} ${log['error_message'] ?? ''}',
+        );
+      }
+
+      // PASO 4: Obtener monitoreo en tiempo real
+      final monitoring = await notificationsService.getRealtimeMonitoring();
+      debugPrint('⏱️ MONITOREO TIEMPO REAL (${monitoring.length} usuarios):');
+      for (final user in monitoring) {
+        if (user['email'] == supabase.auth.currentUser?.email) {
+          debugPrint(
+            '  👤 TU ESTADO: ${user['token_status']} - ${user['token_length']} chars - ${user['logs_recientes']} logs recientes',
+          );
+        }
+      }
+
+      // PASO 5: Forzar actualización
+      debugPrint('🔄 Forzando actualización de token...');
+      await notificationsService.forceUpdateToken();
+
+      // PASO 6: Verificar logs después de la actualización
+      await Future.delayed(const Duration(seconds: 2));
+      final logsAfter = await notificationsService.getDebugLogs(limit: 3);
+      debugPrint('📋 LOGS DESPUÉS DE ACTUALIZACIÓN:');
+      for (final log in logsAfter) {
+        debugPrint(
+          '  ${log['timestamp_log']}: ${log['action_type']} - ${log['success'] ? '✅' : '❌'}',
+        );
+      }
+
+      if (mounted) {
+        // Mostrar información resumida en el SnackBar
+        final tokenStatus = debugInfo['token_available']
+            ? 'Token OK'
+            : 'Sin Token';
+        final logsCount = logs.length;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '🔧 Debug completado: $tokenStatus, $logsCount logs - Revisa consola',
+            ),
+            backgroundColor: Colors.blue,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Error en debug mejorado: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error en debug: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -270,6 +349,25 @@ class _PerfilScreenState extends State<PerfilScreen> {
                   ),
                   const SizedBox(height: 16),
                 ],
+
+                // Botón de debug de notificaciones (solo en desarrollo)
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _debugNotifications,
+                    icon: const Icon(Icons.bug_report),
+                    label: const Text('🔧 Debug FCM Token'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
 
                 // Botón de cerrar sesión
                 SizedBox(

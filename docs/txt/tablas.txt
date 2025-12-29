@@ -1,0 +1,667 @@
+[
+  {
+    "table_name": "reservas",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "reservas",
+    "column_name": "propiedad_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "reservas",
+    "column_name": "viajero_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "reservas",
+    "column_name": "fecha_inicio",
+    "data_type": "date"
+  },
+  {
+    "table_name": "reservas",
+    "column_name": "fecha_fin",
+    "data_type": "date"
+  },
+  {
+    "table_name": "resenas_viajeros",
+    "column_name": "viajero_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "resenas_viajeros",
+    "column_name": "anfitrion_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "resenas_viajeros",
+    "column_name": "reserva_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "resenas_viajeros",
+    "column_name": "calificacion",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "resenas_viajeros",
+    "column_name": "aspectos",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "resenas_viajeros",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "resenas_viajeros",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "notification_settings",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "notification_settings",
+    "column_name": "user_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "notification_settings",
+    "column_name": "email_notifications_enabled",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "notification_settings",
+    "column_name": "push_notifications_enabled",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "notification_settings",
+    "column_name": "in_app_notifications_enabled",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "notification_settings",
+    "column_name": "marketing_notifications_enabled",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "notification_settings",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "notification_settings",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "admin_audit_log",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "admin_audit_log",
+    "column_name": "admin_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "admin_audit_log",
+    "column_name": "target_user_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "admin_audit_log",
+    "column_name": "action_data",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "admin_audit_log",
+    "column_name": "was_successful",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "admin_audit_log",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "push_notification_queue",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "push_notification_queue",
+    "column_name": "user_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "push_notification_queue",
+    "column_name": "data",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "push_notification_queue",
+    "column_name": "attempts",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "push_notification_queue",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "push_notification_queue",
+    "column_name": "sent_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "users_profiles",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "users_profiles",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "users_profiles",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "users_profiles",
+    "column_name": "email_verified",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "users_profiles",
+    "column_name": "rol_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "user_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "metadata",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "is_read",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "read_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "device_tokens",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "device_tokens",
+    "column_name": "user_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "device_tokens",
+    "column_name": "is_active",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "device_tokens",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "device_tokens",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "reservas",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "reservas",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "app_config",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "app_config",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "roles",
+    "column_name": "id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "roles",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "solicitudes_anfitrion",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "solicitudes_anfitrion",
+    "column_name": "usuario_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "solicitudes_anfitrion",
+    "column_name": "fecha_solicitud",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "solicitudes_anfitrion",
+    "column_name": "fecha_respuesta",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "solicitudes_anfitrion",
+    "column_name": "admin_revisor_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "propiedades",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "propiedades",
+    "column_name": "anfitrion_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "propiedades",
+    "column_name": "latitud",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "propiedades",
+    "column_name": "longitud",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "propiedades",
+    "column_name": "capacidad_personas",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "propiedades",
+    "column_name": "numero_habitaciones",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "propiedades",
+    "column_name": "numero_banos",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "propiedades",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "propiedades",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "propiedades",
+    "column_name": "tiene_garaje",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "fotos_propiedades",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "fotos_propiedades",
+    "column_name": "propiedad_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "fotos_propiedades",
+    "column_name": "es_principal",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "fotos_propiedades",
+    "column_name": "orden",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "fotos_propiedades",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "resenas",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "resenas",
+    "column_name": "propiedad_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "resenas",
+    "column_name": "viajero_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "resenas",
+    "column_name": "reserva_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "resenas",
+    "column_name": "calificacion",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "resenas",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "resenas",
+    "column_name": "aspectos",
+    "data_type": "jsonb"
+  },
+  {
+    "table_name": "block_reasons",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "block_reasons",
+    "column_name": "is_active",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "block_reasons",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "mensajes",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "mensajes",
+    "column_name": "reserva_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "mensajes",
+    "column_name": "remitente_id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "mensajes",
+    "column_name": "leido",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "mensajes",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "table_name": "resenas_viajeros",
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "table_name": "reservas",
+    "column_name": "estado",
+    "data_type": "text"
+  },
+  {
+    "table_name": "users_profiles",
+    "column_name": "foto_perfil_url",
+    "data_type": "text"
+  },
+  {
+    "table_name": "users_profiles",
+    "column_name": "cedula_url",
+    "data_type": "text"
+  },
+  {
+    "table_name": "reservas",
+    "column_name": "codigo_verificacion",
+    "data_type": "text"
+  },
+  {
+    "table_name": "app_config",
+    "column_name": "key",
+    "data_type": "text"
+  },
+  {
+    "table_name": "app_config",
+    "column_name": "value",
+    "data_type": "text"
+  },
+  {
+    "table_name": "resenas_viajeros",
+    "column_name": "comentario",
+    "data_type": "text"
+  },
+  {
+    "table_name": "device_tokens",
+    "column_name": "platform",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "type",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "roles",
+    "column_name": "nombre",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "roles",
+    "column_name": "descripcion",
+    "data_type": "text"
+  },
+  {
+    "table_name": "push_notification_queue",
+    "column_name": "fcm_token",
+    "data_type": "text"
+  },
+  {
+    "table_name": "push_notification_queue",
+    "column_name": "title",
+    "data_type": "text"
+  },
+  {
+    "table_name": "resenas",
+    "column_name": "comentario",
+    "data_type": "text"
+  },
+  {
+    "table_name": "solicitudes_anfitrion",
+    "column_name": "foto_selfie_url",
+    "data_type": "text"
+  },
+  {
+    "table_name": "solicitudes_anfitrion",
+    "column_name": "foto_propiedad_url",
+    "data_type": "text"
+  },
+  {
+    "table_name": "solicitudes_anfitrion",
+    "column_name": "mensaje",
+    "data_type": "text"
+  },
+  {
+    "table_name": "solicitudes_anfitrion",
+    "column_name": "estado",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "push_notification_queue",
+    "column_name": "body",
+    "data_type": "text"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "title",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "push_notification_queue",
+    "column_name": "status",
+    "data_type": "text"
+  },
+  {
+    "table_name": "solicitudes_anfitrion",
+    "column_name": "comentario_admin",
+    "data_type": "text"
+  },
+  {
+    "table_name": "block_reasons",
+    "column_name": "nombre",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "block_reasons",
+    "column_name": "descripcion",
+    "data_type": "text"
+  },
+  {
+    "table_name": "propiedades",
+    "column_name": "titulo",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "propiedades",
+    "column_name": "descripcion",
+    "data_type": "text"
+  },
+  {
+    "table_name": "propiedades",
+    "column_name": "direccion",
+    "data_type": "text"
+  },
+  {
+    "table_name": "propiedades",
+    "column_name": "ciudad",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "propiedades",
+    "column_name": "pais",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "message",
+    "data_type": "text"
+  },
+  {
+    "table_name": "users_profiles",
+    "column_name": "estado_cuenta",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "users_profiles",
+    "column_name": "fcm_token",
+    "data_type": "text"
+  },
+  {
+    "table_name": "push_notification_queue",
+    "column_name": "error_message",
+    "data_type": "text"
+  },
+  {
+    "table_name": "device_tokens",
+    "column_name": "token",
+    "data_type": "text"
+  },
+  {
+    "table_name": "propiedades",
+    "column_name": "foto_principal_url",
+    "data_type": "text"
+  },
+  {
+    "table_name": "propiedades",
+    "column_name": "estado",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "mensajes",
+    "column_name": "mensaje",
+    "data_type": "text"
+  },
+  {
+    "table_name": "users_profiles",
+    "column_name": "email",
+    "data_type": "text"
+  },
+  {
+    "table_name": "users_profiles",
+    "column_name": "nombre",
+    "data_type": "text"
+  },
+  {
+    "table_name": "admin_audit_log",
+    "column_name": "action_type",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "users_profiles",
+    "column_name": "telefono",
+    "data_type": "text"
+  },
+  {
+    "table_name": "fotos_propiedades",
+    "column_name": "url_foto",
+    "data_type": "text"
+  },
+  {
+    "table_name": "admin_audit_log",
+    "column_name": "reason",
+    "data_type": "text"
+  }
+]

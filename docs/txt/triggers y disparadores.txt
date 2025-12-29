@@ -1,0 +1,102 @@
+[
+  {
+    "tabla": "resenas_viajeros",
+    "nombre_disparador": "update_resenas_viajeros_updated_at",
+    "accion_sql": "EXECUTE FUNCTION update_updated_at_column()"
+  },
+  {
+    "tabla": "objects",
+    "nombre_disparador": "update_objects_updated_at",
+    "accion_sql": "EXECUTE FUNCTION storage.update_updated_at_column()"
+  },
+  {
+    "tabla": "prefixes",
+    "nombre_disparador": "prefixes_create_hierarchy",
+    "accion_sql": "EXECUTE FUNCTION storage.prefixes_insert_trigger()"
+  },
+  {
+    "tabla": "buckets",
+    "nombre_disparador": "enforce_bucket_name_length_trigger",
+    "accion_sql": "EXECUTE FUNCTION storage.enforce_bucket_name_length()"
+  },
+  {
+    "tabla": "buckets",
+    "nombre_disparador": "enforce_bucket_name_length_trigger",
+    "accion_sql": "EXECUTE FUNCTION storage.enforce_bucket_name_length()"
+  },
+  {
+    "tabla": "objects",
+    "nombre_disparador": "objects_insert_create_prefix",
+    "accion_sql": "EXECUTE FUNCTION storage.objects_insert_prefix_trigger()"
+  },
+  {
+    "tabla": "objects",
+    "nombre_disparador": "objects_delete_delete_prefix",
+    "accion_sql": "EXECUTE FUNCTION storage.delete_prefix_hierarchy_trigger()"
+  },
+  {
+    "tabla": "objects",
+    "nombre_disparador": "objects_update_create_prefix",
+    "accion_sql": "EXECUTE FUNCTION storage.objects_update_prefix_trigger()"
+  },
+  {
+    "tabla": "prefixes",
+    "nombre_disparador": "prefixes_delete_hierarchy",
+    "accion_sql": "EXECUTE FUNCTION storage.delete_prefix_hierarchy_trigger()"
+  },
+  {
+    "tabla": "subscription",
+    "nombre_disparador": "tr_check_filters",
+    "accion_sql": "EXECUTE FUNCTION realtime.subscription_check_filters()"
+  },
+  {
+    "tabla": "subscription",
+    "nombre_disparador": "tr_check_filters",
+    "accion_sql": "EXECUTE FUNCTION realtime.subscription_check_filters()"
+  },
+  {
+    "tabla": "users_profiles",
+    "nombre_disparador": "update_users_profiles_updated_at",
+    "accion_sql": "EXECUTE FUNCTION update_updated_at_column()"
+  },
+  {
+    "tabla": "users",
+    "nombre_disparador": "trigger_crear_perfil_usuario",
+    "accion_sql": "EXECUTE FUNCTION crear_perfil_usuario_automatico()"
+  },
+  {
+    "tabla": "propiedades",
+    "nombre_disparador": "trigger_actualizar_propiedades_updated_at",
+    "accion_sql": "EXECUTE FUNCTION actualizar_updated_at()"
+  },
+  {
+    "tabla": "reservas",
+    "nombre_disparador": "trigger_update_reservas_updated_at",
+    "accion_sql": "EXECUTE FUNCTION update_reservas_updated_at()"
+  },
+  {
+    "tabla": "reservas",
+    "nombre_disparador": "trigger_asignar_codigo_verificacion",
+    "accion_sql": "EXECUTE FUNCTION asignar_codigo_verificacion()"
+  },
+  {
+    "tabla": "device_tokens",
+    "nombre_disparador": "trigger_update_device_token_timestamp",
+    "accion_sql": "EXECUTE FUNCTION update_updated_at_column()"
+  },
+  {
+    "tabla": "notification_settings",
+    "nombre_disparador": "update_notification_settings_updated_at",
+    "accion_sql": "EXECUTE FUNCTION update_updated_at_column()"
+  },
+  {
+    "tabla": "users_profiles",
+    "nombre_disparador": "trigger_log_fcm_changes",
+    "accion_sql": "EXECUTE FUNCTION log_fcm_token_changes()"
+  },
+  {
+    "tabla": "mensajes",
+    "nombre_disparador": "trigger_notificacion_mensaje",
+    "accion_sql": "EXECUTE FUNCTION crear_notificacion_mensaje()"
+  }
+]

@@ -20,6 +20,7 @@ class NotificacionesProvider extends ChangeNotifier {
   Map<TipoNotificacion, List<Notificacion>> get notificacionesAgrupadas =>
       _notificacionesAgrupadas;
   int get contadorNoLeidas => _contadorNoLeidas;
+  int get cantidadNoLeidas => _contadorNoLeidas; // Alias para compatibilidad
   bool get isLoading => _isLoading;
   String? get error => _error;
   FiltroNotificaciones get filtroActual => _filtroActual;
@@ -31,6 +32,7 @@ class NotificacionesProvider extends ChangeNotifier {
       await cargarNotificaciones();
       await actualizarContadorNoLeidas();
       _suscribirseANotificaciones();
+      debugPrint('✅ NotificacionesProvider inicializado con real-time');
     }
   }
 
@@ -43,15 +45,31 @@ class NotificacionesProvider extends ChangeNotifier {
     }
 
     try {
+      debugPrint('🔄 Cargando notificaciones...');
+
+      final user = _supabase.auth.currentUser;
+      if (user == null) {
+        throw Exception('Usuario no autenticado');
+      }
+
+      debugPrint('👤 Usuario ID: ${user.id}');
+
       _notificaciones = await _repository.obtenerNotificaciones(
         filtro: _filtroActual,
       );
 
+      debugPrint('📨 Notificaciones cargadas: ${_notificaciones.length}');
+
       _notificacionesAgrupadas = await _repository
           .obtenerNotificacionesAgrupadas();
 
+      debugPrint(
+        '📊 Notificaciones agrupadas: ${_notificacionesAgrupadas.length} tipos',
+      );
+
       _error = null;
     } catch (e) {
+      debugPrint('❌ Error al cargar notificaciones: $e');
       _error = e.toString();
     } finally {
       _isLoading = false;
@@ -136,16 +154,30 @@ class NotificacionesProvider extends ChangeNotifier {
   void _suscribirseANotificaciones() {
     _subscription?.unsubscribe();
 
+    debugPrint('🔄 Configurando real-time listener para notificaciones...');
+
     _subscription = _repository.suscribirseANotificaciones((notificacion) {
+      debugPrint(
+        '📨 Nueva notificación recibida en tiempo real: ${notificacion.titulo}',
+      );
+
       // Agregar nueva notificación al inicio
       _notificaciones.insert(0, notificacion);
       _contadorNoLeidas++;
+
+      // Actualizar agrupadas
+      if (!_notificacionesAgrupadas.containsKey(notificacion.tipo)) {
+        _notificacionesAgrupadas[notificacion.tipo] = [];
+      }
+      _notificacionesAgrupadas[notificacion.tipo]!.insert(0, notificacion);
 
       // Mostrar notificación push si la app está en background
       _mostrarNotificacionPush(notificacion);
 
       notifyListeners();
     });
+
+    debugPrint('✅ Real-time listener configurado');
   }
 
   // Mostrar notificación push

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/notificacion.dart';
 
@@ -11,17 +12,32 @@ class NotificacionesRepository {
     int offset = 0,
   }) async {
     try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) {
+        throw Exception('Usuario no autenticado');
+      }
+
+      debugPrint('🔍 Obteniendo notificaciones para usuario: ${user.id}');
+
       final response = await _supabase
           .from('notifications')
           .select()
-          .eq('user_id', _supabase.auth.currentUser!.id)
+          .eq('user_id', user.id)
           .order('created_at', ascending: false)
           .limit(limit);
 
-      return (response as List)
-          .map((json) => Notificacion.fromJson(json))
-          .toList();
+      debugPrint('📊 Respuesta de Supabase: ${response.length} notificaciones');
+
+      final notificaciones = (response as List).map((json) {
+        debugPrint('📝 Procesando notificación: ${json['title']}');
+        return Notificacion.fromJson(json);
+      }).toList();
+
+      debugPrint('✅ Notificaciones procesadas: ${notificaciones.length}');
+
+      return notificaciones;
     } catch (e) {
+      debugPrint('❌ Error al obtener notificaciones: $e');
       throw Exception('Error al obtener notificaciones: $e');
     }
   }
